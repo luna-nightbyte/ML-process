@@ -1,6 +1,9 @@
-# AI Processing
+# ML (Model learning) Processing
 
-This project provides a set of Docker containers for AI labeling, detection, fine-tuning models, and continuous object detection applications. The instructions below should guide you through the process of setting up your environment and running the containers.
+This is a project created to automate some training tasks for YOLO object detection models. 
+Run a docker app on a video and generate dataset fro docker training app. 
+
+*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)
 
 ## Prerequisites
 
