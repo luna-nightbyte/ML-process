@@ -97,6 +97,6 @@ Newer docker versions uses `docker compose` without `-`in the command.
 The container should now be listed in [Docker Desktop](https://www.docker.com/products/docker-desktop/), and in the sidebar of Visual studio code. You can use either one to start and stop the containers in the future, and simply remove them if they cause issues starting up containers after editing `docker-compose.yml`.
 
 
-## Author and Maintainer
+## Original author
 - **Luna** [GitHub](https://github.com/luna-nightbyte)
 
