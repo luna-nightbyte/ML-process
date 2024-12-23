@@ -1,0 +1,64 @@
+x-defaults: &default-settings
+  environment:
+    # Application settings:
+      # ----APP NAME---- 
+      # [ detection | ai_label | continuous | train ]
+    - APP_NAME=train
+
+      # --General--
+    - SESSION_NAME=test # Any
+
+    - MODEL_PATH=./models/yolo/model.pt # Must be inside 'models/yolo' folder.
+    - THRESHOLD=0.5 #  Min: 0.0, Max: 1.0
+    - CONSECUTIVE=3 # Usually 2-5
+      # --Input--
+      # Can be an URL, input file, or '0' for webcam on ubuntu
+    - INPUT_DIR=input/INPUT_FOLDER # Must be inside 'input' folder.
+
+      # --TRAINING ONLY--
+    - EPOCHS=150 # 100 - 500 ish ish
+    - BATCH=4 # 4, 8 , 32, 64, 124 and so on. Higher number require more GPU Vram / Ram
+
+      # --FILE SERVING ONLY-- (Tip: see https://github.com/luna-nightbyte/ML-process/tree/main/golang#serve-video-folder)
+    - SERVER_USER=${FILE_SERVER_USER}
+    - SERVER_PASS=${FILE_SERVER_PASS}
+    
+    # Do not change below settings
+    # OS environment settings
+    - PYTHONDONTWRITEBYTECODE=1
+    - PYTHONUNBUFFERED=1
+    - NVIDIA_VISIBLE_DEVICES=all
+    - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+  deploy:
+    resources:
+      reservations:
+        devices:
+          - driver: nvidia
+            count: all
+            capabilities: [gpu]
+      limits:
+        memory: 8g
+
+  build:
+    context: .
+    dockerfile: docker/Dockerfile.base
+  image: luna-nightbyte-ml:base
+  restart: "no"
+  shm_size: '5gb'
+  command: python3 main.py # Container startup command
+  
+
+services:
+    # Webcam for linux:
+  ML-process:
+    <<: *default-settings
+    container_name: ml-processor
+    volumes:
+      - ./local:/usr/src/app
+      - ./output:/usr/src/app/data/output:rw
+      - ./datasets:/usr/src/app/datasets:rw
+      - ./models:/usr/src/app/data/models:ro
+      - ./input:/usr/src/app/data/input:ro
+    # devices:
+    #   - /dev/video0:/dev/video0
