@@ -50,7 +50,6 @@ x-defaults: &default-settings
   
 
 services:
-    # Webcam for linux:
   ML-process:
     <<: *default-settings
     container_name: ml-processor
@@ -60,5 +59,6 @@ services:
       - ./datasets:/usr/src/app/datasets:rw
       - ./models:/usr/src/app/data/models:ro
       - ./input:/usr/src/app/data/input:ro
+    # Webcam for linux:
     # devices:
     #   - /dev/video0:/dev/video0
