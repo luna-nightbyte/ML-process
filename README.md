@@ -1,7 +1,9 @@
 # ML (Model learning) Processing
 
-This is a project created to automate some training tasks for YOLO object detection models. 
-Run a docker app on a video and generate dataset fro docker training app. 
+This is a project created to automate some tasks for YOLO object detection models. 
+Run a docker app on a video and generate dataset for docker training app. Or run object detection on input folder/webcam/external camera. 
+
+Probably possible to tweak to input a video stream from a local ip camera as well.
 
 *Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
 
