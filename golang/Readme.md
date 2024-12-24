@@ -3,11 +3,7 @@
 ### Compile
 
 To build, install Golang and run `go build` from within one of the script folders. 
-Alternatevly, i have pre-compiled binaries for windows, linux and mac using `bash.sh`. These files are located in the `bin`folders.
-
-### Run
-#### Bin
-Each program has a pre-compiled binary that can be used for Linux, Windows, and Mac.
+~Alternatevly, i have pre-compiled binaries for windows, linux and mac using `bash.sh`. These files are located in the `bin`folders.~ I did not move those over and will not. You'll have to install [Go](https://go.dev/learn/) yourself and run them.
 
 #### Serve video folder
 This script serves a folder of files. 
