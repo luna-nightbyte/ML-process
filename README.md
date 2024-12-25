@@ -26,8 +26,8 @@ Checkout the [docker](https://github.com/luna-nightbyte/ML-process/tree/main/doc
 
 ## Usage
 ```bash
-user@host:/ML-process$ git clone https://github.com/luna-nightbyte/ML-process
-user@host:/ML-process$ cd ./ML-process
+user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
+user@host:/$ cd ./ML-process
 user@host:/ML-process$ docker compose up ML-process
 
 [+] Running 0/0
