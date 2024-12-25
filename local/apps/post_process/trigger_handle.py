@@ -30,7 +30,7 @@ def handle_trigger(frame, detections, output_path: str):
                 
                 
                 if Config.PADDING != "":
-                    extracted_image_path = out_path.replace(".jpg",f"_det-{i}.jpg")
+                    extracted_image_path = out_path.replace(f"{os.path.splitext(out_path)[1]}",f"_det-{i}{os.path.splitext(out_path)[1]}")
                     print("Saving image to",extracted_image_path) 
                     save_extracted_box(frame=frame,box=box, extracted_image_path=extracted_image_path)
                     
