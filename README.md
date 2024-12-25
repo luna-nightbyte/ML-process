@@ -25,8 +25,6 @@ Checkout the [docker](https://github.com/luna-nightbyte/ML-process/tree/main/doc
 
 
 ## Usage
-
-Clone the repository to your local machine:
 ```bash
 git clone https://github.com/luna-nightbyte/ML-process
 cd ./ML-process
@@ -50,7 +48,6 @@ ml-processor  |
 ml-processor  | A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
 ml-processor  | 
 ```
-## Startup
 
 ### Settings
 The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
