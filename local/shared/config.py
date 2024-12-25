@@ -1,14 +1,31 @@
-import torch
 import os
+
 import shared.file as files
-
-from ultralytics import YOLO
-
-class Main:
+class settings:
+    
     def __init__(self):
         # Extracting the arguments
         self.model_path = os.path.join("data",os.getenv('MODEL_PATH'))
         self.threshold = os.getenv('THRESHOLD')
+        self.OUTPUT_SIZE: tuple
+        self.PADDING = ""
+        output_size_enviroment = os.getenv('OUTPUT_SIZE')
+        self.show_bbox = os.getenv('SHOW_BOUNDING_BOX')
+        if self.show_bbox == "":
+            self.show_bbox  = None
+        else:
+            if self.show_bbox.lower() == "true":
+                self.show_bbox = True
+            else:
+                self.show_bbox = False
+        if output_size_enviroment != "":
+            size = output_size_enviroment.split(",")
+            try:
+                self.OUTPUT_SIZE = (int(size[0]),int(size[1]))
+                self.PADDING = os.getenv('PADDING')
+            except:
+                print("Wrong frame dimentions!")
+                exit()
         try: 
             self.source_folder = int(os.getenv('INPUT_DIR'))
         except:
@@ -41,23 +58,6 @@ class Main:
         files.create_if_not_exist(self.output_target_folder)
         files.create_if_not_exist(self.model_path)
        
-    def init_model(self):
-        self.model = YOLO(self.model_path)
-        if torch.cuda.is_available():
-            print(f"GPU Name: {torch.cuda.get_device_name(0)}\n")
-            self.model.to('cuda')  # Move model to GPU
-            self.useCuda = True
-            print("Loaded to GPU!")
-        else:
-            print("WARNING: Loaded model to CPU. GPU is not available!")
-    def load_vision(self):
-        if self.model is None:
-            print("Loading model")
-            self.init_model()
-        return self.model
-            
-    def get_model_path(self):
-        return self.model_path
     def get_threshold(self):
         return self.threshold
     def get_source_folder(self):
@@ -72,6 +72,8 @@ class Main:
         return self.min_consecutive
     def get_labels(self):
         return self.labels
+    def draw_bbox(self):
+        return self.show_bbox == True
     
     def AppName(self):
         return self.APP_NAME

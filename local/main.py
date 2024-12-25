@@ -4,15 +4,17 @@ import logging as log
 import contextlib
 import glob
 import os
+
 import shared.vision as vision
-import shared.init as init
 import shared.file as files
+
+from shared.config import settings
 
 
 
 
 # This script reads the input folder and copies each video to the output folder.
-Config = init.Main()
+Config = settings()
 log_file= 'detection.log'
 # software variables 
 log.getLogger('ultralytics').setLevel(log.WARNING)
@@ -21,7 +23,7 @@ log.basicConfig(filename=log_file,
                 format='%(asctime)s\n%(message)s')
 
 def main():
-    if "train" == Config.APP_NAME:
+    if Config.APP_NAME == "train" == Config.APP_NAME:
         import apps.trainer.train as train
         train.Trianer().start(Config)
     else:
@@ -31,7 +33,8 @@ def main():
             target_folder = Config.output_target_folder
 
         input_source = files.Source().get_input_source(Config.source_folder)
-  
+        if input_source == None:
+            return
         for source in input_source:
             vision.run_object_detection(source, target_folder)
         if Config.APP_NAME=="ai_label":

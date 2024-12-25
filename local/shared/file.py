@@ -25,7 +25,7 @@ class Source:
                     self.result = glob.glob(os.path.join(source_folder, "*"))
                 except:
                     print("No files to process..")
-                    exit()
+                    return None
         elif "http://" in source_folder:
             try: 
                 video_list = stream.get_file_lists(source_folder, self.SERVER_USER, self.SERVER_PASS)
@@ -39,7 +39,7 @@ class Source:
                         
             except:
                 print("No files to process..")
-                exit()
+                return None
         return self.result
             
     def data(self):

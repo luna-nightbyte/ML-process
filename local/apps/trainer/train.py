@@ -1,5 +1,3 @@
-from ultralytics import YOLO
-
 import torch
 class Trianer:
     def start(self,config):
