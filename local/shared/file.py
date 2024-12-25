@@ -3,7 +3,8 @@ import os
 import yaml
 import glob
 import shared.server as stream
-class Video:
+
+class Source:
     def __init__(self):
         self.video_url = None
         self.result = None
@@ -15,24 +16,23 @@ class Video:
             self.SERVER_USER = None
             self.SERVER_PASS = None
             
-    def get_video_list(self, source_folder):
-        input = source_folder.lower()
+    def get_input_source(self, source_folder):
         
-        if  input == "0":
+        if  isinstance(source_folder,int):
                 self.result = [0]
-        elif "input" in input and not "http://" in input:
+        elif "input" in source_folder and not "http://" in source_folder:
                 try:
-                    self.result = glob.glob(os.path.join(source_folder, "*.mp4"))
+                    self.result = glob.glob(os.path.join(source_folder, "*"))
                 except:
                     print("No files to process..")
                     exit()
-        elif "http://" in input:
+        elif "http://" in source_folder:
             try: 
-                video_list = stream.get_file_lists(input,self.SERVER_USER,self.SERVER_PASS)
+                video_list = stream.get_file_lists(source_folder, self.SERVER_USER, self.SERVER_PASS)
                 index = 0
                 for video in video_list:
                     if "http://" not in video:
-                        video_list[index] = input + video
+                        video_list[index] = source_folder + video
                     index += 1
                     
                 self.result = video_list

@@ -2,10 +2,10 @@
 import os
 import time
 import random
-import shared.video as video
+import shared.recorder as recorder
 import shared.annotate as annotate
 import shared.file as f
-recorder = video.Recorder()
+recorder = recorder.Recorder()
 skip = 0
 def handle_trigger(frame,triggered,detections,output_path, r):
     global recorder

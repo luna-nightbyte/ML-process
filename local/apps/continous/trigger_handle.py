@@ -1,6 +1,6 @@
 import cv2
 
-import shared.video as det
+import shared.recorder as rec
 
 # Instantiate the recorder'
 def handle_trigger(frame,triggered,detections,output_path,  recorder):

@@ -1,4 +1,5 @@
 from ultralytics import YOLO
+
 import torch
 class Trianer:
     def start(self,config):
@@ -7,7 +8,6 @@ class Trianer:
         self.model = config.get_model()  # or use 'yolov5s.pt' for YOLOv5
     
         # Training parameters
-        print(config.DATASET_YAML)
         self.data = config.DATASET_YAML  # Path to your dataset YAML file
         self.epochs = config.epochs          # Number of epochs to train for
         self.batch = config.batch          # Batch size

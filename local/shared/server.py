@@ -15,7 +15,7 @@ def toList(input, s):
     return tmp
 
 def get_file_lists(server_url,user,password):
-    print(server_url)
+    
     out=[""]
     try:
         response = requests.get(f"{server_url}", auth=HTTPBasicAuth(user, password))

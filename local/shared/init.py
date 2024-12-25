@@ -9,8 +9,11 @@ class Main:
         # Extracting the arguments
         self.model_path = os.path.join("data",os.getenv('MODEL_PATH'))
         self.threshold = os.getenv('THRESHOLD')
-        self.source_folder =  os.path.join("./data/", os.getenv('INPUT_DIR'))
-        
+        try: 
+            self.source_folder = int(os.getenv('INPUT_DIR'))
+        except:
+            self.source_folder =  os.path.join("./data/", os.getenv('INPUT_DIR'))
+            
         self.dataset_target_folder = os.path.join("./datasets")
         self.output_target_folder =os.path.join("./data/output/" , os.getenv('SESSION_NAME'))
         self.min_consecutive = os.getenv('CONSECUTIVE')
@@ -20,13 +23,13 @@ class Main:
         self.epochs = int(os.getenv('EPOCHS'))
         self.batch = int(os.getenv('BATCH'))
         
-        files.Video().set_server_user(os.getenv('SERVER_USER'))
-        files.Video().set_server_pass(os.getenv('SERVER_PASS'))
+        files.Source().set_server_user(os.getenv('SERVER_USER'))
+        files.Source().set_server_pass(os.getenv('SERVER_PASS'))
         
         
         self.model = None
         self.useCuda = False
-        if files.no_input_files(self.source_folder) and self.source_folder != "0":
+        if files.no_input_files(self.source_folder) and os.getenv('INPUT_DIR') != "0":
             print(f"No video files in '{self.source_folder}'..")
             exit()
         
@@ -47,8 +50,9 @@ class Main:
             print("Loaded to GPU!")
         else:
             print("WARNING: Loaded model to CPU. GPU is not available!")
-    def get_model(self):
+    def load_vision(self):
         if self.model is None:
+            print("Loading model")
             self.init_model()
         return self.model
             

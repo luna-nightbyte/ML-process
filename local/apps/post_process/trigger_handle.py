@@ -1,5 +1,6 @@
-import shared.video as rec
+import shared.recorder as rec
 import cv2
+import os
 # Instantiate the recorder
 recorder = rec.Recorder()
 
@@ -9,12 +10,17 @@ def handle_trigger(frame,triggered, detections, output_path,r):
     # if triggered:
     #     cur.execute(db.set_processed_by_user(o.observation_id, o.video_id, result_trigger))
     global recorder
-    print("Recording to",output_path.replace(".mp4",f"_{recorder.get_video_num()}.mp4"))
+    out_path = output_path.replace(os.path.basename(output_path),os.path.basename(output_path).replace(".",f"_{recorder.get_video_num()}."))
+    media_type = rec.check_media_type(output_path)
     if triggered and not recorder.running:
         height, width, _ = frame.shape
         fps = 30  # Set your desired FPS
-        recorder.start_recording(output_path.replace(".mp4",f"_{recorder.get_video_num()}.mp4"), (width, height))
-
+        if  media_type == "Video" or media_type == "Webcam":
+            print("Recording to",out_path)
+            recorder.start_recording(out_path, (width, height))
+        elif media_type == "Image":
+            print("Saving image to",out_path)
+            cv2.imwrite(out_path, frame)
     if not triggered:
         recorder.no_detection_frames += 1
     else:

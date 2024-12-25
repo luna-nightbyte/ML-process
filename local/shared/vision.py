@@ -9,7 +9,7 @@ from threading import Thread, Event
 
 # local
 
-import shared.video as video
+import shared.recorder as recorder
 import shared.init as init
 
 # Import application trigger handler
@@ -19,7 +19,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 Config = init.Main()
 
-Recorder = video.Recorder()
+Recorder = recorder.Recorder()
 # Configure logging
 log.getLogger('ultralytics').setLevel(log.ERROR)
 
@@ -49,12 +49,13 @@ def get_frame_tensor(frame, size=(640,640),cuda=False):
         frame_tensor = torch.from_numpy(resized_frame).permute(2, 0, 1).unsqueeze(0).float()
     return  frame_tensor
 
-def check_detections(model_path, frame, threshold, size=(640,640)):
+from cv2.typing import MatLike
+def check_detections(model_path: str, frame: MatLike, threshold: str, size: tuple=(640,640)):
     global Recorder
     # Returns
     trigger_bool = False
     detections = []
-    model = Config.get_model()
+    model = Config.load_vision()
     frame_tensor = get_frame_tensor(frame, size,Config.useCuda)
     frame_tensor = frame_tensor / 255.0
     frame_results = model(frame_tensor)
@@ -85,12 +86,10 @@ def check_detections(model_path, frame, threshold, size=(640,640)):
     
     return frame,trigger_bool, detections
 
-def process_frame_queue(frame_queue, stop_event, video_path,recorder,target_folder):
-    global detectionSummary
+def process_frame_queue(frame_queue: Queue, stop_event: Event, video_path, recorder, target_folder: str):
     global Config
     try:
         if Config.APP_NAME == "ai_label":
-            
             out_path = os.path.join(target_folder,"annotations/labelImg",Config.SESSION_NAME, os.path.basename(video_path))
         else:
             out_path = os.path.join(target_folder, os.path.basename(video_path))
@@ -114,7 +113,7 @@ def process_frame_queue(frame_queue, stop_event, video_path,recorder,target_fold
             else:
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
-            frame,trigger_bool, detections=check_detections(Config.model_path,frame_queue.get(), Config.threshold,(640,640))
+            frame,trigger_bool, detections=check_detections(Config.model_path, frame_queue.get(), Config.threshold,(640,640))
             th.handle_trigger(
                 frame,
                 trigger_bool,
@@ -125,14 +124,14 @@ def process_frame_queue(frame_queue, stop_event, video_path,recorder,target_fold
         
     recorder.stop_recording()
 
-def run_object_detection(video_path,target_folder):
+def run_object_detection(input_source,target_folder):
     global Recorder
     frame_queue = Queue(maxsize=10)
     stop_event = Event() 
-    reader_thread = Thread(target=video.reader, args=(video_path, frame_queue, stop_event))
+    reader_thread = Thread(target=recorder.reader, args=(input_source, frame_queue, stop_event))
     
     reader_thread.start()
-    if process_frame_queue(frame_queue, stop_event, video_path, Recorder,target_folder):
+    if process_frame_queue(frame_queue, stop_event, input_source, Recorder ,target_folder):
         return
     reader_thread.join()
     

@@ -21,7 +21,6 @@ log.basicConfig(filename=log_file,
                 format='%(asctime)s\n%(message)s')
 
 def main():
-    
     if "train" == Config.APP_NAME:
         import apps.trainer.train as train
         train.Trianer().start(Config)
@@ -31,8 +30,10 @@ def main():
         else:
             target_folder = Config.output_target_folder
 
-        for video in files.Video().get_video_list(Config.source_folder):
-            vision.run_object_detection(video,target_folder)
+        input_source = files.Source().get_input_source(Config.source_folder)
+  
+        for source in input_source:
+            vision.run_object_detection(source, target_folder)
         if Config.APP_NAME=="ai_label":
             import datasets.create_dataset
             datasets.create_dataset.Create(os.path.join(target_folder,"annotations"),Config.SESSION_NAME, Config.labels)
