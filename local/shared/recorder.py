@@ -1,7 +1,8 @@
 
 import cv2
-import yaml
-import shared.init as ini
+import shared.init as init
+from shared.source import image, video
+import os
 class Recorder:
     def __init__(self):
         self.running = False
@@ -56,7 +57,7 @@ class Recorder:
         return self.false_positive_count
     
     def get_min_consecutive(self):
-        return ini.Main().min_consecutive
+        return init.Main().min_consecutive
         
     def timer_event(self):
         if self.timer>self.fps*10:
@@ -69,16 +70,30 @@ class Recorder:
     def get_video_num(self):
         return self.number_of_videos
     
-def reader(video_path, frame_queue, stop_event):
-
-    cap = cv2.VideoCapture(video_path)
-    while not stop_event.is_set() and cap.isOpened():
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame_queue.put(frame)
-    cap.release()
-    stop_event.set()
+def reader(input_source, frame_queue, stop_event):
+    if os.path.exists(input_source) and not isinstance(input_source,int):
+        source = image.Image(source=input_source, queue=frame_queue,stopEvent=stop_event)
+    else:
+        source = video.Video(source=input_source, queue=frame_queue,stopEvent=stop_event)
+    source.load_to_queue(input_source=input_source)
+    source.stopEvent.set()
 
 
+def check_media_type(filename):
+    if isinstance(filename, int):
+        return "Webcam"
+    # Define sets of known image and video extensions
+    image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"}
+    video_extensions = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".webm"}
 
+    # Extract the file extension
+    _, ext = os.path.splitext(filename)
+    ext = ext.lower()  # Normalize to lowercase
+
+    # Determine the media type
+    if ext in image_extensions:
+        return "Image"
+    elif ext in video_extensions:
+        return "Video"
+    else:
+        return "Unknown"
