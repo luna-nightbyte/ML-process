@@ -1,39 +1,36 @@
 x-defaults: &default-settings
   environment:
-    # Application settings:
-      # ----APP NAME---- 
-      # [ detection | ai_label | continuous | train | frame_insert ]
-    - APP_NAME=frame_insert
+    # Application Settings
+    - APP_NAME=frame_insert   # [ detection | ai_label | continuous | train | frame_insert ]
+    - SESSION_NAME=detection       # Any name to identify the session
 
-      # --General--
-    - SESSION_NAME=test # Any
+    # Model and Threshold
+    - MODEL_PATH=./models/yolo/model.pt  # Must be inside the 'models/yolo' folder.
+    - THRESHOLD=0.5                      # Min: 0.0, Max: 1.0
+    - CONSECUTIVE=3                      # Typically 2-5 for stability.
 
-    - MODEL_PATH=./models/yolo/model.pt # Must be inside 'models/yolo' folder.
-    - THRESHOLD=0.5 #  Min: 0.0, Max: 1.0
-    - CONSECUTIVE=3 # Usually 2-5
-      # --Input--
-      # Can be an URL, input file, or '0' for webcam on ubuntu
-    - INPUT_DIR=input/INPUT_FOLDER # Must be inside 'input' folder.
+    # Input Settings
+    - INPUT_DIR=input/INPUT_FOLDER       # Must be inside the 'input' folder.
 
-      # --Output--
-    - OUTPUT_SIZE=128,128 # I.e: 512,512
-    - PADDING=50 # Optional padding to extract extra area from the image (As of now this is not implamented properly. But adding any value here will save a image of the detection in the desired output size)
-    - SHOW_BOUNDING_BOX=false # Option to draw bounding box on the output frames
-    - CSV_FILE_PATH=output/file.csv
-      # --TRAINING ONLY--
-    - EPOCHS=150 # 100 - 500 ish ish
-    - BATCH=4 # 4, 8 , 32, 64, 124 and so on. Higher number require more GPU Vram / Ram
+    # Output Settings
+    - OUTPUT_SIZE=128,128                # For example: 512,512
+    - PADDING=50                         # Optional. Extra padding for image extraction (not fully implemented yet).
+    - SHOW_BOUNDING_BOX=false            # Draw bounding boxes on output frames (true/false).
+    - CSV_FILE_PATH=output/file.csv      # Path to save the output CSV file.
 
-      # --FILE SERVING ONLY-- (Tip: see https://github.com/luna-nightbyte/ML-process/tree/main/golang#serve-video-folder)
-    - SERVER_USER=${FILE_SERVER_USER}
-    - SERVER_PASS=${FILE_SERVER_PASS}
-    
-    # Do not change below settings
-    # OS environment settings
-    - PYTHONDONTWRITEBYTECODE=1
-    - PYTHONUNBUFFERED=1
-    - NVIDIA_VISIBLE_DEVICES=all
-    - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    # Training-Specific Settings
+    - EPOCHS=150                         
+    - BATCH=4                            # Valid values: 4, 8, 32, 64, etc. Higher values require more GPU VRAM.
+
+    # File Serving Settings
+    - SERVER_USER=${FILE_SERVER_USER}    # Username for file server.
+    - SERVER_PASS=${FILE_SERVER_PASS}    # Password for file server.
+
+    # System Environment Settings
+    - PYTHONDONTWRITEBYTECODE=1          # Prevent Python from writing .pyc files.
+    - PYTHONUNBUFFERED=1                 # Disable Python output buffering.
+    - NVIDIA_VISIBLE_DEVICES=all         # Enable all NVIDIA GPUs.
+    - NVIDIA_DRIVER_CAPABILITIES=compute,utility  # Required GPU capabilities.
 
   deploy:
     resources:
@@ -43,27 +40,33 @@ x-defaults: &default-settings
             count: all
             capabilities: [gpu]
       limits:
-        memory: 8g
+        memory: 8g  # Limit container memory usage to 8GB.
+  image: lunanightbyte/ml-process:v0.0.2
+  restart: "no"  # Disable container auto-restart.
+  shm_size: '5gb'  # Increase shared memory size to handle large data.
+  command: python3 main.py  # Default command to run the application.
 
+x-build: &build-settings
   build:
     context: .
-    dockerfile: docker/Dockerfile.base
-  image: luna-nightbyte-ml:base
-  restart: "no"
-  shm_size: '5gb'
-  command: python3 main.py # Container startup command
-  
+    dockerfile: docker/Dockerfile.run  # Use the specified Dockerfile.
+  image: lunanightbyte/ml-process:v0.0.3
+  restart: "no"  # Disable container auto-restart.
 
 services:
+  ML-build:
+    <<: *build-settings
+
   ML-process:
     <<: *default-settings
     container_name: ml-processor
     volumes:
-      - ./local:/usr/src/app
-      - ./output:/usr/src/app/data/output:rw
-      - ./datasets:/usr/src/app/datasets:rw
-      - ./models:/usr/src/app/data/models:ro
-      - ./input:/usr/src/app/data/input:ro
-    # Webcam for linux:
+      - ./local:/usr/src/app               # Mount local directory for application files.
+      - ./output:/usr/src/app/data/output:rw  # Output directory with read/write permissions.
+      - ./datasets:/usr/src/app/datasets:rw  # Datasets directory with read/write permissions.
+      - ./models:/usr/src/app/data/models:ro  # Models directory with read-only permissions.
+      - ./input:/usr/src/app/data/input:ro    # Input directory with read-only permissions.
+
+    # Uncomment the following for Linux webcam support:
     # devices:
     #   - /dev/video0:/dev/video0
