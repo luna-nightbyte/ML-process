@@ -2,3 +2,5 @@ database/
 output/*
 input/*
 models/*
+
+.env
