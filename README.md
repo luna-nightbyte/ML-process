@@ -51,6 +51,12 @@ This extracted image can then be re-inserted back into the original image using 
 
 *Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
 
+__Docker alternative__
+```bash
+user@host:/$ docker pull lunanightbyte/ml-process:latest
+```
+
+__Bare minimum__
 ```bash
 user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
 user@host:/$ cd ./ML-process
