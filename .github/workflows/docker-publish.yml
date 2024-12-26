@@ -24,4 +24,4 @@ jobs:
           IMAGE_NAME=lunanightbyte/ml-process
           docker build -f docker/Dockerfile.run -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} .
           docker push $IMAGE_NAME:latest
-          docker push $IMAGE_NAME:$tag
+          docker push $IMAGE_NAME:$TAG
