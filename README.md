@@ -60,25 +60,33 @@ x-defaults: &default-settings
   environment:
     # Application settings:
       # ----APP NAME---- 
-      # [ detection | ai_label | continuous | train ]
-    - APP_NAME=train
+      # [ detection | ai_label | continuous | train | frame_insert ]
+    - APP_NAME=frame_insert
 
       # --General--
     - SESSION_NAME=test # Any
-
     - MODEL_PATH=./models/yolo/model.pt # Must be inside 'models/yolo' folder.
     - THRESHOLD=0.5 #  Min: 0.0, Max: 1.0
     - CONSECUTIVE=3 # Usually 2-5
+
       # --Input--
       # Can be an URL, input file, or '0' for webcam on ubuntu
-    - INPUT_DIR=input/test # Must be inside 'input' folder.
+    - INPUT_DIR=input/INPUT_FOLDER # Must be inside 'input' folder.
+
+      # --Output--
+    - OUTPUT_SIZE=128,128 # I.e: 512,512
+    - PADDING=50 # Optional padding to extract extra area from the image (As of now this is not implamented properly. But adding any value here will save a image of the detection in the desired output size)
+    - SHOW_BOUNDING_BOX=false # Option to draw bounding box on the output frames
+    - CSV_FILE_PATH=output/file.csv
 
       # --TRAINING ONLY--
     - EPOCHS=150 # 100 - 500 ish ish
     - BATCH=4 # 4, 8 , 32, 64, 124 and so on. Higher number require more GPU Vram / Ram
 
       # --FILE SERVING ONLY-- (Tip: see https://github.com/luna-nightbyte/ML-process/tree/main/golang#serve-video-folder)
-    - FILE_SERVER_USER=${username}
+    - SERVER_USER=${FILE_SERVER_USER}
+    - SERVER_PASS=${FILE_SERVER_PASS}
+    
     - FILE_SERVER_PASS=${password}
 
 ```
