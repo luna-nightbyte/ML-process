@@ -1,11 +1,7 @@
 # ML (Model learning) Processing
 
 This is a project created to automate some tasks for YOLO object detection models. 
-Run a docker app on a video and generate dataset for docker training app. Or run object detection on input folder/webcam/external camera. 
-
-Probably possible to tweak to input a video stream from a local ip camera as well.
-
-*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
+Run a docker app on a video and generate dataset for docker training app. Or run object detection on input folder/webcam/external camera.
 
 ## Prerequisites
 
@@ -25,6 +21,13 @@ Checkout the [docker](https://github.com/luna-nightbyte/ML-process/tree/main/doc
 
 
 ## Usage
+Optional during object detection to extract the detected object in a spesific frame size. Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction, and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
+`PADDING=` is intended to be the amount of extra padding around the detected object to extract. But this is not implemented yet. 
+
+This extracted image can then be re-inserted back into the original image using the x.y position saved in a csv file. 
+
+*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
+
 ```bash
 user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
 user@host:/$ cd ./ML-process
