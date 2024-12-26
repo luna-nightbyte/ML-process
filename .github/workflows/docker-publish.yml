@@ -25,3 +25,4 @@ jobs:
           docker build -f docker/Dockerfile.run -t $IMAGE_NAME:latest -t $IMAGE_NAME:${{ github.sha }} .
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:${{ github.sha }}
+          docker push $IMAGE_NAME:latest
