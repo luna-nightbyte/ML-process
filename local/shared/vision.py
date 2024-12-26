@@ -12,6 +12,7 @@ import shared.config as config
 from queue import Queue
 from threading import Thread, Event
 
+
 # Import application trigger handler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 Config = config.settings()
@@ -76,7 +77,7 @@ def get_frame_tensor(frame):
         
     return frame_tensor
 
-def check_detections( frame: cv2.typing.MatLike):
+def check_detections(frame: cv2.typing.MatLike, out_path: str):
     detections = []
 
     # Load the model
@@ -94,7 +95,7 @@ def check_detections( frame: cv2.typing.MatLike):
         boxes = result.boxes.xyxy.cpu().numpy()
         confidences = result.boxes.conf.cpu().numpy()
         labels = result.boxes.cls.cpu().numpy()
-        
+        i = 0
         for box, conf, label in zip(boxes, confidences, labels):
             if conf > float(Config.threshold):
                 trigger_label = "unknown"
@@ -109,25 +110,26 @@ def check_detections( frame: cv2.typing.MatLike):
                 # Convert the bounding box coordinates to image size
                 x1, y1, x2, y2 = convert_bbox_cord(box, frame, None)
 
-                # Extract and resize the detected region
-                # Optionally draw the bounding box on the frame
-
+                recorder.save_box_if_set(frame, (x1, y1, x2, y2), out_path, i, recorder.process.csv_writer)
+                i+=1
+                
                 detections.append(( (x1, y1, x2, y2), trigger_label, conf))
 
     return frame, detections
 
-
-def process_frame_queue(frame_queue: Queue, stop_event: Event, video_path, target_folder: str):
-    global Config
+queue_i = 0
+def process_frame_queue(frame_queue: Queue, index_queue: Queue, stop_event: Event, input_source, target_folder: str):
+    global Config, queue_i
     try:
         if Config.APP_NAME == "ai_label":
-            out_path = os.path.join(target_folder,"annotations/labelImg",Config.SESSION_NAME, os.path.basename(video_path))
+            out_path = os.path.join(target_folder,"annotations/labelImg",Config.SESSION_NAME, os.path.basename(input_source))
         else:
-            out_path = os.path.join(target_folder, os.path.basename(video_path))
+            out_path = os.path.join(target_folder, os.path.basename(input_source))
+            
         
     except:
         out_path =  os.path.join(target_folder, f"noName_{recorder.process.get_video_num()}_.mp4")
-
+   
     while not stop_event.is_set() or not frame_queue.empty():
         if not frame_queue.empty():
             th = None
@@ -141,10 +143,19 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, video_path, targe
             elif name == "ai_label":
                 from apps.ai_labeler import trigger_handle
                 th = trigger_handle
+            elif name == "frame_insert":
+                print("Loop")
+                frame = frame_queue.get()
+                image = recorder.reconstruct_original_image(input_source, frame,queue_i)
+                cv2.imwrite(os.path.join(target_folder,os.path.basename(input_source)),image)
+                
+                print("Saved image as: ",os.path.join(target_folder,os.path.basename(input_source)))
+                queue_i+=1
+                continue
             else:
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
-            frame, detections=check_detections(frame_queue.get())
+            frame, detections=check_detections(frame_queue.get(),out_path)
             
             th.handle_trigger(
                 frame,
@@ -156,11 +167,13 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, video_path, targe
 
 def run_object_detection(input_source,target_folder):
     frame_queue = Queue(maxsize=10)
+    index_queue = Queue(maxsize=10)
     stop_event = Event() 
-    reader_thread = Thread(target=recorder.process.reader, args=(input_source, frame_queue, stop_event))
+    reader_thread = Thread(target=recorder.process.reader, args=(input_source, frame_queue, index_queue, stop_event))
     
     reader_thread.start()
-    if process_frame_queue(frame_queue, stop_event, input_source ,target_folder):
+    
+    if process_frame_queue(frame_queue, index_queue, stop_event, input_source ,target_folder):
         return
     reader_thread.join()
 

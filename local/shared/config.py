@@ -1,4 +1,5 @@
 import os
+import csv
 
 import shared.file as files
 class settings:
@@ -11,6 +12,7 @@ class settings:
         self.PADDING = ""
         output_size_enviroment = os.getenv('OUTPUT_SIZE')
         self.show_bbox = os.getenv('SHOW_BOUNDING_BOX')
+        self.csv_file_path = os.path.join("/usr/src/app/data",os.getenv('CSV_FILE_PATH'))
         if self.show_bbox == "":
             self.show_bbox  = None
         else:
@@ -78,3 +80,83 @@ class settings:
     def AppName(self):
         return self.APP_NAME
     
+
+
+class csv_data:
+    def __init__(self,path):
+        self.path = path
+        self.file = None
+        self.writer = None
+        self.fieldnames = None
+        
+    def open(self, is_new_file: bool, fieldnames): 
+        if self.is_open():
+            return f"{self.path} already open" 
+        try:
+            self.file = open(self.path, mode="a", newline="")
+            self.writer = csv.DictWriter(self.file, fieldnames=fieldnames)
+            if is_new_file:
+                self.writer.writeheader()
+                self.fieldnames = fieldnames
+        except Exception as e:
+            self.path = None
+            print(e)
+            pass
+        
+        
+        return None
+    def close(self):  
+        if self.file is not None:
+            self.close()
+            self.file = None  
+            self.writer = None
+        else:
+            return f"{self.path} not open"
+        return None
+    def is_open(self):  
+        return self.writer is not None
+    
+    def read(self):  
+        output_data = [{}]
+        with open(self.path, mode ='r') as file:
+            reader = csv.reader(file,delimiter=' ', quotechar='|')
+            output_data.clear()
+            for lines in reader:
+                if is_valid_input(lines):
+                    data = {
+                        "file_path": lines[0].split(",")[0],
+                        "x1": lines[0].split(",")[1],
+                        "y1": lines[0].split(",")[2],
+                        "x2": lines[0].split(",")[3],
+                        "y2": lines[0].split(",")[4],
+                        "scale_x": lines[0].split(",")[5],
+                        "scale_x": lines[0].split(",")[6]
+                    }
+                    output_data.append(data)
+        return output_data
+    def write(self,data):
+        if self.path is None:
+            return f"writer not properly initialyzed!"
+        if self.is_open():
+            # writer = csv.writer(self.file)
+            self.writer.writerow(data)
+            return f"wrote to file"
+        else:
+            err= self.open(False,self.fieldnames)
+            if err is not None: 
+                print(err)
+                return err
+            self.writer.writerow(data)
+            return None
+
+def is_valid_input(lines):
+    try:
+        is_at_max = lines[0].split(",")[6]
+        x1 = int(lines[0].split(",")[1])
+        y1 = int(lines[0].split(",")[2])
+        x2 = int(lines[0].split(",")[3])
+        y2 = int(lines[0].split(",")[4])
+        x = x1 + x2 + y1 + y2
+        return True
+    except:
+        return False

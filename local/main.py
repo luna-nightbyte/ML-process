@@ -8,7 +8,8 @@ import os
 import shared.vision as vision
 import shared.file as files
 
-from shared.config import settings
+from shared.config import settings, csv_data
+from shared.target.recorder import process
 
 
 
@@ -35,6 +36,8 @@ def main():
         input_source = files.Source().get_input_source(Config.source_folder)
         if input_source == None:
             return
+        process.csv_writer = csv_data(settings().csv_file_path)
+        process.csv_writer.open(True,["file_path","x1","y1","x2","y2","scale_x","scale_y"])
         for source in input_source:
             vision.run_object_detection(source, target_folder)
         if Config.APP_NAME=="ai_label":

@@ -5,7 +5,7 @@ import os
 
 import shared.target.recorder as recorder
 from shared.config import settings
-from shared.target.recorder import extract_and_resize, save_extracted_box
+from shared.target.recorder import save_box_if_set
 Config = settings()
 def handle_trigger(frame, detections, output_path: str):
     
@@ -23,17 +23,8 @@ def handle_trigger(frame, detections, output_path: str):
             recorder.process.start_recording(out_path, (width, height))
         elif media_type == "Image":
             print("Saving image to",out_path)
-            i = 0
             for (box, label, conf) in detections:
                 
-                
-                
-                
-                if Config.PADDING != "":
-                    extracted_image_path = out_path.replace(f"{os.path.splitext(out_path)[1]}",f"_det-{i}{os.path.splitext(out_path)[1]}")
-                    print("Saving image to",extracted_image_path) 
-                    save_extracted_box(frame=frame,box=box, extracted_image_path=extracted_image_path)
-                    
                 if Config.draw_bbox():
                     x1, y1, x2, y2 = map(int, box)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
