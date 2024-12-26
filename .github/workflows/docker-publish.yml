@@ -22,6 +22,13 @@ jobs:
       - name: Build and Push Docker Image
         run: |
           IMAGE_NAME=lunanightbyte/ml-process
+          
+          # Check if TAG is empty or invalid
+          if [ -z "$TAG" ]; then
+            echo "Error: Git tag is empty or invalid!"
+            exit 1
+          fi
+          
           docker build -f docker/Dockerfile.run -t $IMAGE_NAME:$TAG -t $IMAGE_NAME:latest .
           docker push $IMAGE_NAME:latest
           docker push $IMAGE_NAME:$TAG
