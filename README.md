@@ -21,6 +21,29 @@ Checkout the [docker](https://github.com/luna-nightbyte/ML-process/tree/main/doc
 
 
 ## Usage
+
+#### Training
+Remember to modify [dataset.yaml](https://github.com/luna-nightbyte/ML-process/blob/main/local/dataset.yaml) for your dataset/Session name. 
+
+#### General
+Modify docker compose to use your desired application:
+```
+x-defaults: &default-settings
+  environment:
+    # Application settings:
+      # ----APP NAME---- 
+      # [ detection | ai_label | continuous | train | frame_insert ]
+    - APP_NAME=detection
+
+
+services:
+  ML-process:
+    <<: *default-settings
+    container_name: ml-processor
+    volumes:
+      - PATH/TO/INPUT/FOLDER:/usr/src/app/data/input:ro
+```
+
 Optional during object detection to extract the detected object in a spesific frame size. Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction, and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
 `PADDING=` is intended to be the amount of extra padding around the detected object to extract. But this is not implemented yet. 
 
@@ -93,21 +116,6 @@ x-defaults: &default-settings
     - FILE_SERVER_PASS=${password}
 
 ```
-
-### Starting an App
-#### Training
-Remember to modify [dataset.yaml](https://github.com/luna-nightbyte/ML-process/blob/main/local/dataset.yaml) for your dataset/Session name. 
-
-#### General
-Easiest to open up the folder with [Visual Studio Code](https://code.visualstudio.com/)  and work from there.
-
-Simply open a terminal that is in the same folder as `docker-compose.yml`and run `docker-compose up ai`to start any of the applications. 
-
-Newer docker versions uses `docker compose` without `-`in the command. 
-
-The container should now be listed in [Docker Desktop](https://www.docker.com/products/docker-desktop/), and in the sidebar of Visual studio code. You can use either one to start and stop the containers in the future, and simply remove them if they cause issues starting up containers after editing `docker-compose.yml`.
-
-
 ## Original author
 - **Luna** [GitHub](https://github.com/luna-nightbyte)
 
