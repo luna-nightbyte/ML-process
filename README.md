@@ -44,6 +44,7 @@ services:
       - PATH/TO/INPUT/FOLDER:/usr/src/app/data/input:ro
 ```
 __Experminental__
+
 Optional during object detection to extract the detected object in a spesific frame size. Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction, and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
 `PADDING=` is intended to be the amount of extra padding around the detected object to extract. But this is not implemented yet. 
 
