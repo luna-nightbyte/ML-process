@@ -43,13 +43,11 @@ services:
     volumes:
       - PATH/TO/INPUT/FOLDER:/usr/src/app/data/input:ro
 ```
-
+__Experminental__
 Optional during object detection to extract the detected object in a spesific frame size. Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction, and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
 `PADDING=` is intended to be the amount of extra padding around the detected object to extract. But this is not implemented yet. 
 
 This extracted image can then be re-inserted back into the original image using the x.y position saved in a csv file. 
-
-*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
 
 __Docker alternative__
 ```bash
@@ -81,6 +79,8 @@ ml-processor  |
 ml-processor  | A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
 ml-processor  | 
 ```
+
+*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
 
 ### Settings
 The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
