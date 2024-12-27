@@ -7,40 +7,50 @@ import pandas as pd
 from cv2.typing import MatLike
 
 from shared.source import image, video
-from shared.config import settings, csv_data
+from shared.config import settings,CSVData
 
 class recorder:
     def __init__(self):
         self.running = False
-        self.out = None
+        self.type = None
         self.cap = None
+        self.source = None
         self.frame_num = 0
         self.fps = 15
         self.timer = 0
         self.number_of_videos = 0
         self.no_detection_frames = 0
         self.consecutive = 0
-        self.csv_writer: csv_data = None
+        self.csv_writer: CSVData = None
         
         self.false_positive_count = 0
         self.total_frames_processed = 0
-
+        
     def start_recording(self, output_path, frame_shape):
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        self.out = cv2.VideoWriter(output_path, fourcc, self.fps, frame_shape)
+        if self.running:
+            return
+        
+        self._init()
         self.running = True
-        self.number_of_videos += 1
-        self.no_detection_frames =0
+        if self.type == "video":
+            video_path = output_path
+            # video_path = output_path.replace(os.path.splitext(output_path)[1],f"_Extracted_{os.path.splitext(output_path)[1]}") 
+            self.source.start_recording(video_path,frame_shape)
+        else:
+            return
+        
+            
+        
 
     def stop_recording(self):
-        self.running = False
-        if self.out:
-            self.out.release()
-            self.out = None
+        self.source.stop_recording()
 
-    def write_frame(self, frame):
-        if self.out:
-            self.out.write(frame)
+    def write_frame(self,path, frame):
+        """Path is only needed for single images."""
+        if self.type is None:
+            print("recorder not running!")
+            return
+        return self.source.write_frame(path, frame)
     
     def increase_frame_number(self):
         self.frame_num += 1
@@ -79,12 +89,35 @@ class recorder:
     
     def reader(self,input_source, frame_queue, index_queue, stop_event):
         if os.path.exists(input_source) and not isinstance(input_source,int):
-            source = image.Image(source=input_source, queue=frame_queue, index_queue=index_queue, stopEvent=stop_event)
+            if ".mp4" in input_source:
+                cv2.VideoCapture(input_source)
+                self.source = video.Video(source=input_source, queue=frame_queue, stopEvent=stop_event)
+            else:
+                self.source = image.Image(source=input_source, queue=frame_queue, stopEvent=stop_event)
+            print(self.source.type)    
+        elif isinstance(input_source,int):
+            cv2.VideoCapture(input_source)
+            self.source = video.Video(source=input_source, queue=frame_queue, stopEvent=stop_event)  
         else:
-            source = video.Video(source=input_source, queue=frame_queue, index_queue=index_queue, stopEvent=stop_event)
-        source.load_to_queue(input_source=input_source)
-        source.stopEvent.set()
-
+            print("no valid input")
+        self.source.load_to_queue(input_source=input_source)
+        self.source.stopEvent.set()
+        
+    def _init(self):
+        self.stopEvent = self.source.stopEvent
+        self.type = self.source.type
+        self.index_queue = self.source
+        self.output_path = self.source.output_path
+        self.writer = self.source.writer
+        self.frame_num = self.source.frame_num
+        self.fps = self.source.fps
+        self.timer = self.source.timer
+        self.number_of_videos = self.source.number_of_videos
+        self.no_detection_frames = self.source.no_detection_frames
+        self.consecutive = self.source.consecutive
+        self.false_positive_count = self.source.false_positive_count
+        self.total_frames_processed = self.source.total_frames_processed
+    
 
 process = recorder()
 
@@ -110,7 +143,7 @@ def check_media_type(filename):
 
 
 def reconstruct_original_image(input_source: str, resized_image: np.ndarray, index_queue: int):
-    csv_file = csv_data(settings().csv_file_path)
+    csv_file = CSVData(settings().csv_file_path)
     
     data = csv_file.read()
     input_file_identifier = os.path.basename(input_source).split("_det")[0]
@@ -175,7 +208,7 @@ def reconstruct_original_image(input_source: str, resized_image: np.ndarray, ind
     return original_frame
 
 
-def extract_and_resize(fullFrame_out_path: str, output_path: str, frame: np.ndarray, bbox, output_size, csv_file: csv_data):
+def extract_and_resize(input_source_path: str, frame: np.ndarray, bbox, output_size, csv_file: CSVData):
     """
     Extracts a detected region from the frame, resizes it, and adjusts the extracted box to include
     the missing parts when scaling down, avoiding black padding.
@@ -190,7 +223,7 @@ def extract_and_resize(fullFrame_out_path: str, output_path: str, frame: np.ndar
         tuple: The scaling factors (scale_x, scale_y).
     """
     if output_size is None:
-        output_size = settings().OUTPUT_SIZE
+        output_size = settings().output_size
 
     x1, y1, x2, y2 = bbox
     ih, iw, _ = frame.shape
@@ -229,7 +262,7 @@ def extract_and_resize(fullFrame_out_path: str, output_path: str, frame: np.ndar
         cropped_img = frame[y1:y2, x1:x2]
     
     csv_file.write({
-        "file_path": fullFrame_out_path.replace("./","/usr/src/app/", 1),
+        "file_path": input_source_path.replace("./","/usr/src/app/", 1),
         "x1": x1, 
         "y1": y1,
         "x2": x2, 
@@ -242,43 +275,25 @@ def extract_and_resize(fullFrame_out_path: str, output_path: str, frame: np.ndar
     
     final_resized_img = cv2.resize(cropped_img, output_size, interpolation=cv2.INTER_LINEAR)
 
-    return final_resized_img, (scale_x, scale_y)
+    return final_resized_img
 
-def save_extracted_box(fullFrame_out_path: str, frame:  np.ndarray, box, extracted_image_path,csv_file: csv_data):
-    """
-    Extracts and saves a resized bounding box image to the specified path.
-
-    Args:
-        frame (np.ndarray): The input image.
-        box (tuple): The bounding box (x1, y1, x2, y2) in pixel coordinates.
-        extracted_image_path (str): Path to save the extracted image.
-    """
-    output_size = settings().OUTPUT_SIZE
-    output_frame, scale_factor = extract_and_resize(fullFrame_out_path,extracted_image_path, frame, box, output_size,csv_file)
-    
-    cv2.imwrite(extracted_image_path, output_frame)
-    
 import shared.config as config
 
-def save_box_if_set(frame, box, fullFrame_out_path: str, i: int, csv_file: csv_data):
-    if config.settings().PADDING != "":
-        extracted_image_path = fullFrame_out_path.replace(f"{os.path.splitext(fullFrame_out_path)[1]}",f"_det-{i}{os.path.splitext(fullFrame_out_path)[1]}")
+def save_box_if_set(frame, box, output_path: str, i: int, csv_file: CSVData):
+    if config.settings().padding != "":
+        extracted_image_path = output_path.replace(f"{os.path.splitext(output_path)[1]}",f"_det-{i}{os.path.splitext(output_path)[1]}")
         dir = os.path.dirname(os.path.abspath(extracted_image_path))
         out_dir = os.path.join(dir,"detections")
         if not os.path.exists(out_dir):
             os.makedirs(out_dir)
-        fullFrame_corrected_out_path = os.path.join(os.path.dirname(os.path.abspath(fullFrame_out_path)),f"{os.path.splitext(os.path.basename(fullFrame_out_path))[0]}_{process.get_video_num()}{os.path.splitext(os.path.basename(fullFrame_out_path))[1]}")
+        output_path_corrected_path = os.path.join(os.path.dirname(os.path.abspath(output_path)),f"{os.path.splitext(os.path.basename(output_path))[0]}_{process.get_video_num()}{os.path.splitext(os.path.basename(output_path))[1]}")
         
         extracted_image_path = os.path.join(out_dir, os.path.basename(extracted_image_path))
         
-        print("Saving image to",extracted_image_path) 
-        save_extracted_box(
-            fullFrame_out_path=fullFrame_corrected_out_path,
-            frame=frame, 
-            box=box, 
-            extracted_image_path=extracted_image_path, 
-            csv_file=csv_file)
+        output_size = settings().output_size
+        output_frame = extract_and_resize(output_path_corrected_path, frame, box, output_size,csv_file)
+        return output_frame
         
-    if config.settings().draw_bbox():
+    if config.settings().show_bbox:
         x1, y1, x2, y2 = map(int, box)
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)

@@ -3,12 +3,22 @@ from threading import Event
 import os
 import cv2
 class Image:
-    def __init__(self, source: str, queue: Queue, index_queue: Queue, stopEvent: Event):
+    def __init__(self, source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
-        self.index_queue = index_queue
         self.stopEvent = stopEvent
         self.source = source
         self.type = "image"
+        self.output_path = None
+        self.writer = None
+        self.frame_num = 0
+        self.fps = 15
+        self.timer = 0
+        self.number_of_videos = 0
+        self.no_detection_frames = 0
+        self.consecutive = 0
+        self.false_positive_count = 0
+        self.total_frames_processed = 0
+        
     
     def load_to_queue(self,input_source):
         loop_finished = False
@@ -24,8 +34,14 @@ class Image:
                         else:
                             self.queue.put(cv2.imread(filename=file_path))
                 else:
-                    self.index_queue.put(i)
                     self.queue.put(cv2.imread(filename=input_source))
                     i+=1
             loop_finished = True
-        
+    
+    def start_recording(self, output_path, frame_shape):
+        return
+    def stop_recording(self):
+        return
+
+    def write_frame(self, path,frame):
+        print(cv2.imwrite(path,frame))

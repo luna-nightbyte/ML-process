@@ -7,7 +7,8 @@ import logging as log
 from ultralytics import YOLO
 
 import shared.target.recorder as recorder
-import shared.config as config
+from shared.config import settings
+from shared.file import get_labels
 
 from queue import Queue
 from threading import Thread, Event
@@ -15,14 +16,13 @@ from threading import Thread, Event
 
 # Import application trigger handler
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-Config = config.settings()
 
 class model:
     def __init__(self):
         self.model = None
         self.useCuda = False
     def init_model(self):
-        self.model = YOLO(Config.model_path)
+        self.model = YOLO(settings().model_path)
         if torch.cuda.is_available():
             print(f"GPU Name: {torch.cuda.get_device_name(0)}\n")
             self.model.to('cuda')  # Move model to GPU
@@ -49,7 +49,7 @@ def convert_bbox_cord(box, new_frame,output_size):
     'output_size' defaults to enviroment setting if None
     """
     if output_size is None:
-        output_size = Config.OUTPUT_SIZE
+        output_size = settings().output_size
     height, width, _ = new_frame.shape
     
     scale_x = width / output_size[1]
@@ -67,19 +67,18 @@ def convert_bbox_cord(box, new_frame,output_size):
 def get_frame_tensor(frame):
     # Resize the frame to the desired size
     
-    resized_frame = cv2.resize(frame, Config.OUTPUT_SIZE, interpolation=cv2.INTER_LINEAR)
+    resized_frame = cv2.resize(frame, settings().output_size, interpolation=cv2.INTER_LINEAR)
 
     # Convert frame to tensor and send it to GPU if needed
     frame_tensor = torch.from_numpy(resized_frame).permute(2, 0, 1).unsqueeze(0).float()
     
-    if Config.useCuda:
+    if settings().use_cuda:
         frame_tensor = frame_tensor.to('cuda')
         
     return frame_tensor
 
 def check_detections(frame: cv2.typing.MatLike, out_path: str):
     detections = []
-
     # Load the model
     model = Model.load_vision()
     
@@ -97,23 +96,24 @@ def check_detections(frame: cv2.typing.MatLike, out_path: str):
         labels = result.boxes.cls.cpu().numpy()
         i = 0
         for box, conf, label in zip(boxes, confidences, labels):
-            if conf > float(Config.threshold):
+            if conf > float(settings().threshold):
                 trigger_label = "unknown"
                 label_index = str(label).split(".")[0]
                 
                 # Get the corresponding label from Config
-                for current_label_index, l in enumerate(Config.get_labels()):
+                for current_label_index, l in enumerate(settings().labels):
                     if str(current_label_index) == label_index:
                         trigger_label = l
                         break
 
                 # Convert the bounding box coordinates to image size
                 x1, y1, x2, y2 = convert_bbox_cord(box, frame, None)
-
-                recorder.save_box_if_set(frame, (x1, y1, x2, y2), out_path, i, recorder.process.csv_writer)
+                out_frame = recorder.save_box_if_set(frame, (x1, y1, x2, y2), out_path, i, recorder.process.csv_writer)
+                    
+    
                 i+=1
                 
-                detections.append(( (x1, y1, x2, y2), trigger_label, conf))
+                detections.append((out_frame, (x1, y1, x2, y2), trigger_label, conf))
 
     return frame, detections
 
@@ -121,19 +121,19 @@ queue_i = 0
 def process_frame_queue(frame_queue: Queue, index_queue: Queue, stop_event: Event, input_source, target_folder: str):
     global Config, queue_i
     try:
-        if Config.APP_NAME == "ai_label":
-            out_path = os.path.join(target_folder,"annotations/labelImg",Config.SESSION_NAME, os.path.basename(input_source))
+        if settings().app_name == "ai_label":
+            out_path = os.path.join(target_folder,"annotations/labelImg",settings().SESSION_NAME, os.path.basename(input_source))
         else:
             out_path = os.path.join(target_folder, os.path.basename(input_source))
             
         
     except:
         out_path =  os.path.join(target_folder, f"noName_{recorder.process.get_video_num()}_.mp4")
-   
+    
     while not stop_event.is_set() or not frame_queue.empty():
         if not frame_queue.empty():
             th = None
-            name = Config.AppName()
+            name = settings().app_name
             if name == "detection":
                 from apps.post_process import trigger_handle
                 th = trigger_handle
@@ -144,17 +144,18 @@ def process_frame_queue(frame_queue: Queue, index_queue: Queue, stop_event: Even
                 from apps.ai_labeler import trigger_handle
                 th = trigger_handle
             elif name == "frame_insert":
-                print("Loop")
                 frame = frame_queue.get()
                 image = recorder.reconstruct_original_image(input_source, frame,queue_i)
-                cv2.imwrite(os.path.join(target_folder,os.path.basename(input_source)),image)
-                
+                out_path = os.path.join(target_folder,os.path.basename(input_source))
+                recorder.process.write_frame(out_path,image)
                 print("Saved image as: ",os.path.join(target_folder,os.path.basename(input_source)))
                 queue_i+=1
                 continue
             else:
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
+                
+                
             frame, detections=check_detections(frame_queue.get(),out_path)
             
             th.handle_trigger(
