@@ -89,6 +89,8 @@ class recorder:
     
     def reader(self,input_source, frame_queue, index_queue, stop_event):
         if os.path.exists(input_source) and not isinstance(input_source,int):
+            
+            # TODO: Update to check for video or webcam type
             if ".mp4" in input_source:
                 cv2.VideoCapture(input_source)
                 self.source = video.Video(source=input_source, queue=frame_queue, stopEvent=stop_event)
