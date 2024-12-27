@@ -41,7 +41,7 @@ x-defaults: &default-settings
             capabilities: [gpu]
       limits:
         memory: 8g  # Limit container memory usage to 8GB.
-  image: lunanightbyte/ml-process:v0.0.2
+  image: lunanightbyte/ml-process:latest
   restart: "no"  # Disable container auto-restart.
   shm_size: '5gb'  # Increase shared memory size to handle large data.
   command: python3 main.py  # Default command to run the application.
