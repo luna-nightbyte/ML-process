@@ -56,7 +56,6 @@ def save(image_name, image, bbox, label, full_output_path):
         obj = ET.SubElement(root, "object")
         name = ET.SubElement(obj, "name")
         name.text = label
-        print("name was.",label)
         pose = ET.SubElement(obj, "pose")
         pose.text = "Unspecified"
         
