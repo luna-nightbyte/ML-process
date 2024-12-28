@@ -78,7 +78,27 @@ ml-processor  | By pulling and using the container, you accept the terms and con
 ml-processor  | https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
 ml-processor  | 
 ml-processor  | A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
-ml-processor  | 
+ml-processor  |
+ml-processor  | Processing: ./data/input/demo/171044-844787782_tiny.mp4
+ml-processor  | Loading model
+ml-processor  | GPU Name: NVIDIA GeForce GTX 1660 Ti
+ml-processor  | Loaded to GPU!
+ml-processor  | Recording saved: ./data/output/demo/171044-844787782_tiny.mp4
+ml-processor  | Recording saved: ./data/output/demo/E_171044-844787782_tiny.mp4
+ml-processor  | Recording saved: ./data/output/demo/171044-844787782_tiny.mp4
+ml-processor  | Recording saved: ./data/output/demo/E_171044-844787782_tiny.mp4
+ml-processor  | Processing: ./data/input/demo/girl-1867092_1280.jpg
+ml-processor  | Saving image to ./data/output/demo/girl-1867092_1280.jpg
+ml-processor  | Saving image to ./data/output/demo/girl-1867092_1280.jpg
+ml-processor  | Processing: ./data/input/demo/202718-918779955_medium.mp4
+ml-processor  | Recording saved: ./data/output/demo/202718-918779955_medium.mp4
+ml-processor  | Recording saved: ./data/output/demo/E_202718-918779955_medium.mp4
+ml-processor  | Recording saved: ./data/output/demo/202718-918779955_medium.mp4
+ml-processor  | Recording saved: ./data/output/demo/E_202718-918779955_medium.mp4
+ml-processor  | Processing: ./data/input/demo/man-3803551_1280.jpg
+ml-processor  | Saving image to ./data/output/demo/man-3803551_1280.jpg
+ml-processor  | Saving image to ./data/output/demo/man-3803551_1280.jpg
+ml-processor exited with code 0
 ```
 
 *Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
