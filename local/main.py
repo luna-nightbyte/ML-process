@@ -28,7 +28,7 @@ def main():
         settings.model_path = "/usr/src/app/data/models/yolo/model.pt" # Ensure a default mdoel.
         if not os.path.exists(settings.model_path) or os.path.isdir(settings.model_path):
             url = "https://huggingface.co/arnabdhar/YOLOv8-Face-Detection/resolve/main/model.pt"
-            print(f"Donwloading model from {url}")
+            print(f"Downloading model from {url}")
             os.removedirs(settings.model_path)
             os.makedirs(os.path.dirname(settings.model_path))
             import urllib.request
