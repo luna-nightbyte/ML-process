@@ -197,6 +197,7 @@ output files</summary>
 
 
 *Note: Using "demo" as app in docker-compose.yml is only ment as a very simple bare minimum demo so generate all files the various apps will generate.Annotations, Dataset, Trained model and so on. Always verify any auto generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg).*
+
 *Note 2: Use [docker volume args](https://docs.docker.com/reference/cli/docker/container/run/#volume) to retrieve generated files if using the demo run.*
 
 ## Requirements
