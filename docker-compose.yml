@@ -23,6 +23,7 @@ x-defaults: &default-settings
     - EPOCHS=150                         
     - BATCH=4                            # Valid values: 4, 8, 32, 64, etc. Higher values require more GPU VRAM.
     - MODEL_IMG_SIZE=640
+
     # File Serving Settings
     - SERVER_USER=${FILE_SERVER_USER}    # Username for file server.
     - SERVER_PASS=${FILE_SERVER_PASS}    # Password for file server.
@@ -46,17 +47,6 @@ x-defaults: &default-settings
   restart: "no"  # Disable container auto-restart.
   shm_size: '5gb'  # Increase shared memory size to handle large data.
   command: python3 main.py  # Default command to run the application.
-
-x-build: &build-settings
-  build:
-    context: .
-    dockerfile: docker/Dockerfile.run  # Use the specified Dockerfile.
-  image: lunanightbyte/ml-process:v0.0.3
-  restart: "no"  # Disable container auto-restart.
-
-services:
-  ML-build:
-    <<: *build-settings
 
   ML-process:
     <<: *default-settings
