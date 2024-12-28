@@ -1,2 +1,2 @@
-cat
-dog
+man
+woman

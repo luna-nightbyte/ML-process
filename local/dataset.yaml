@@ -1,6 +1,6 @@
 
-train: train/doggycat/train/images
-val: train/doggycat/val/images
+train: train/demo/train/images
+val: train/demo/val/images
 
 nc: 2
-names: ['cat', 'dog']
+names: ['man', 'woman']
