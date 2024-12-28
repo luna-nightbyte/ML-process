@@ -11,7 +11,10 @@ Remember to modify [dataset.yaml](https://github.com/luna-nightbyte/ML-process/b
 
 
 ### Settings
-The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
+The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is by the app. Most of these can be left to default.
+
+Bare minimum to modify would probably be `APP_NAME`, `SESSION_NAME`, `INPUT_DIR`.
+
 Edit these to change settings when you run any application:
 ```docker-compose.yml
     # Application settings:
@@ -27,8 +30,8 @@ Edit these to change settings when you run any application:
     - INPUT_DIR=input/demo       # Must be inside the 'input' folder.
 
     # Output Settings
-    - OUTPUT_SIZE=128,128                # For example: 512,512
-    - EXTRACT_BOX=true                   # true/false
+    - OUTPUT_SIZE=128,128                # For example: 512,512. (Can be bigger)
+    - EXTRACT_BOX=false                   # true/false
     # - PADDING=                         # Optional. Extra padding for image extraction (not fully implemented yet).
     - SHOW_BOUNDING_BOX=false            # Draw bounding boxes on output frames (true/false).
     - CSV_FILE_PATH=output/file.csv      # Path to save the output CSV file.
