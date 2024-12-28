@@ -39,14 +39,14 @@ __Docker alternative__
 user@host:/$ docker pull lunanightbyte/ml-process:latest
 ```
 
-__Bare minimum__
+__Example demo run output__
 ```bash
 user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
 user@host:/$ cd ./ML-process
 user@host:/ML-process$ docker compose up ML-process
 
-[+] Running 0/0
- ⠋ Container ml-processor   Created
+[+] Running 1/0
+ ✔ Container ml-processor  Recreated                                                                                                                                                                                                                                                                                               0.0s 
 Attaching to ml-processor
 ml-processor  | 
 ml-processor  | ==========
@@ -62,13 +62,15 @@ ml-processor  | By pulling and using the container, you accept the terms and con
 ml-processor  | https://developer.nvidia.com/ngc/nvidia-deep-learning-container-license
 ml-processor  | 
 ml-processor  | A copy of this license is made available in this container at /NGC-DL-CONTAINER-LICENSE for your convenience.
-ml-processor  |
+ml-processor  | 
+ml-processor  | Creating new Ultralytics Settings v0.0.6 file ✅ 
+ml-processor  | View Ultralytics Settings with 'yolo settings' or at '/root/.config/Ultralytics/settings.json'
+ml-processor  | Update Settings with 'yolo settings key=value', i.e. 'yolo settings runs_dir=path/to/dir'. For help see https://docs.ultralytics.com/quickstart/#ultralytics-settings.
 ml-processor  | Processing: ./data/input/demo/171044-844787782_tiny.mp4
 ml-processor  | Loading model
 ml-processor  | GPU Name: NVIDIA GeForce GTX 1660 Ti
+ml-processor  | 
 ml-processor  | Loaded to GPU!
-ml-processor  | Recording saved: ./data/output/demo/171044-844787782_tiny.mp4
-ml-processor  | Recording saved: ./data/output/demo/E_171044-844787782_tiny.mp4
 ml-processor  | Recording saved: ./data/output/demo/171044-844787782_tiny.mp4
 ml-processor  | Recording saved: ./data/output/demo/E_171044-844787782_tiny.mp4
 ml-processor  | Processing: ./data/input/demo/girl-1867092_1280.jpg
@@ -77,15 +79,24 @@ ml-processor  | Saving image to ./data/output/demo/girl-1867092_1280.jpg
 ml-processor  | Processing: ./data/input/demo/202718-918779955_medium.mp4
 ml-processor  | Recording saved: ./data/output/demo/202718-918779955_medium.mp4
 ml-processor  | Recording saved: ./data/output/demo/E_202718-918779955_medium.mp4
-ml-processor  | Recording saved: ./data/output/demo/202718-918779955_medium.mp4
-ml-processor  | Recording saved: ./data/output/demo/E_202718-918779955_medium.mp4
 ml-processor  | Processing: ./data/input/demo/man-3803551_1280.jpg
 ml-processor  | Saving image to ./data/output/demo/man-3803551_1280.jpg
 ml-processor  | Saving image to ./data/output/demo/man-3803551_1280.jpg
-ml-processor exited with code 0
+ml-processor  | Processing: ./data/input/demo/171044-844787782_tiny.mp4
+ml-processor  | Processing: ./data/input/demo/girl-1867092_1280.jpg
+ml-processor  | Processing: ./data/input/demo/202718-918779955_medium.mp4
+ml-processor  | Processing: ./data/input/demo/man-3803551_1280.jpg
+100%|██████████| 755k/755k [00:00<00:00, 10.3MB/s]
+train: Scanning /usr/src/app/datasets/train/demo/train/labels... 2327 images, 0 backgrounds, 0 corrupt: 100%|██████████| 2327/2327 [00:00<00:00, 3589.75it/s]
+val: Scanning /usr/src/app/datasets/train/demo/val/labels... 1571 images, 0 backgrounds, 0 corrupt:     100%|██████████| 1571/1571 [00:00<00:00, 2951.12it/s]
+        1/2      3.71G     0.4086     0.7891     0.8887          9        640:                          100%|██████████| 146/146 [00:35<00:00,  4.17it/s]
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95):               100%|██████████| 50/50 [00:05<00:00,  8.70it/s]
+        2/2      3.73G     0.3184     0.3344     0.8527         15        640:                          100%|██████████| 146/146 [00:34<00:00,  4.19it/s]
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95):               100%|██████████| 50/50 [00:05<00:00,  9.28it/s]
+                 Class     Images  Instances      Box(P          R      mAP50  mAP50-95):               100%|██████████| 50/50 [00:05<00:00,  9.17it/s]
 ```
 
-*Note: Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg)*
+*Note: This demo is only ment as a very simple bare minimum demo so generate all files the various apps will generate.Annotations, Dataset, Trained model and so on. Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg).*
 
 ### Settings
 The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
