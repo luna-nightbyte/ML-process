@@ -159,10 +159,8 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
                     )
             except Exception as e:
                 print(e)
+                pass
         
-    process.MainRecorder.stop_recording()
-    if settings.extract_detection_img:
-        process.SubRecorder.stop_recording()
 
 def run_object_detection(input_source, target_folder):
     # Initialize main frame queue and stop event
@@ -185,13 +183,19 @@ def run_object_detection(input_source, target_folder):
     try:
         # Process each frame queue
         for frame_queue, stop_event in frame_queues:
-            if process_frame_queue(frame_queue, stop_event, input_source, target_folder):
-                return
+            process_frame_queue(frame_queue, stop_event, input_source, target_folder)
+        
+        
     finally:
+        
         # Signal all stop events to gracefully terminate threads
         for _, stop_event in frame_queues:
             stop_event.set()
 
+        process.MainRecorder.stop_recording()
+        if settings.extract_detection_img:
+            process.SubRecorder.stop_recording()
+            
         # Join all reader threads to ensure proper cleanup
         for thread in reader_threads:
             thread.join()
