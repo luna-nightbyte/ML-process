@@ -1,7 +1,42 @@
 FROM lunanightbyte/ml-process:base
 
-COPY . . 
-
-RUN mv local/* . && rm -rf local
-
 ENV NVIDIA_VISIBLE_DEVICES=all
+
+ENV APP_NAME=demo
+ENV SESSION_NAME=demo
+
+# Model and Threshold
+ENV MODEL_PATH=./models/yolo/model.pt
+ENV THRESHOLD=0.5
+ENV CONSECUTIVE=3
+
+# Input Settings
+ENV INPUT_DIR=input/demo
+
+# Output Settings
+ENV OUTPUT_SIZE=128,128
+ENV EXTRACT_BOX=true
+ENV SHOW_BOUNDING_BOX=true
+ENV CSV_FILE_PATH=output/file.csv
+
+# Training-Specific Settings
+ENV EPOCHS=16                         
+ENV BATCH=16
+ENV MODEL_IMG_SIZE=640
+
+# File Serving Settings
+ENV SERVER_USER="user"
+ENV SERVER_PASS="password"
+
+# System Environment Settings
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
+
+WORKDIR /usr/src/app
+
+COPY local/ .
+RUN mkdir -p data/input
+
+CMD [ "python3", "main.py" ]
