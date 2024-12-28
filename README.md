@@ -5,7 +5,7 @@ Run a docker app on a video and generate dataset for docker training app. Or run
 
 _Make sure to checkout [Requirements](https://github.com/luna-nightbyte/ML-process/tree/main?tab=readme-ov-file#requirements)_
 ## Usage
-
+Simply pull the latest docker [image](https://hub.docker.com/r/lunanightbyte/ml-process/tags?name=latest) from the hub and run with the [compose file](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) from this repo.
 #### Training
 Remember to modify [dataset.yaml](https://github.com/luna-nightbyte/ML-process/blob/main/local/dataset.yaml) for your dataset/Session name. 
 
