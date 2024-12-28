@@ -53,8 +53,12 @@ class Source:
     def get_server_url(self):
         return self.SERVER_URL
     def set_server_user(self,SERVER_USER):
+        if SERVER_USER == "user":
+            print("WARNING: Fileserving expects default username  'user'")
         self.SERVER_USER = SERVER_USER
     def set_server_pass(self,SERVER_PASS):
+        if SERVER_PASS == "password":
+            print("WARNING: Fileserving expects default password  'password'")
         self.SERVER_PASS = SERVER_PASS
         
 
