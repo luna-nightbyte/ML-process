@@ -1,0 +1,7 @@
+FROM lunanightbyte/ml-process:latest
+
+WORKDIR /usr/src/app
+
+COPY demo data/input/demo
+
+CMD [ "python3", "main.py" ]
