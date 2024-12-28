@@ -53,25 +53,25 @@ Optional during object detection to extract the detected object in a spesific fr
 
 This extracted image can then be re-inserted back into the original image using the x.y position saved in a csv file. 
 
-__Docker alternative__
+[__Docker demo__](https://hub.docker.com/layers/lunanightbyte/ml-process/demo/images/sha256-324c7f4f37129eadb360b48d746819b58d35f8e3f5ff94799fad27e4829b1f4e)
 ```bash
-user@host:/$ docker pull lunanightbyte/ml-process:latest
+user@host:/$ docker pull lunanightbyte/ml-process:demo
 ```
 
 ### Demo
+
 <details>
 <summary>
-Docker compose</summary>
+Docker run</summary>
 
 ```bash
-user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
-user@host:/$ cd ./ML-process
-user@host:/ML-process$ docker compose up ML-process
-
+user@host:/$ docker run -it lunanightbyte/ml-process:demo
 [+] Running 1/0
  ✔ Container ml-processor  Recreated                                                                                                                                                                                                                                                                                               0.0s 
 Attaching to ml-processor
-ml-processor  | 
+
+ml-processor  | WARNING: Fileserving expects default username  'user'
+ml-processor  | WARNING: Fileserving expects default password  'password'
 ml-processor  | ==========
 ml-processor  | == CUDA ==
 ml-processor  | ==========
@@ -197,6 +197,7 @@ output files</summary>
 
 
 *Note: Using "demo" as app in docker-compose.yml is only ment as a very simple bare minimum demo so generate all files the various apps will generate.Annotations, Dataset, Trained model and so on. Always verify any auto generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg).*
+*Note 2: Use [docker volume args](https://docs.docker.com/reference/cli/docker/container/run/#volume) to retrieve generated files if using the demo run.*
 
 ## Requirements
 ### Hardware
