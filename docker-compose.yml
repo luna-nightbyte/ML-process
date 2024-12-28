@@ -65,8 +65,9 @@ services:
       - ./local:/usr/src/app               # Mount local directory for application files.
       - ./output:/usr/src/app/data/output:rw  # Output directory with read/write permissions.
       - ./datasets:/usr/src/app/datasets:rw  # Datasets directory with read/write permissions.
-      - ./models:/usr/src/app/data/models:ro  # Models directory with read-only permissions.
-      - ./input:/usr/src/app/data/input:ro    # Input directory with read-only permissions.
+      - ./models:/usr/src/app/data/models  # Models directory with read-only permissions.
+      - ./demo:/usr/src/app/data/input/demo    # Input directory with read-only permissions.
+      - ./input:/usr/src/app/data/input    # Input directory with read-only permissions.
 
     # Uncomment the following for Linux webcam support:
     # devices:
