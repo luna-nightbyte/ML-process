@@ -9,6 +9,7 @@ import shared.vision as vision
 import shared.file as files
 
 from shared.config import settings, csv_handler
+from shared.dataset import generate_dataset
 import shared.recorder.process as process
 
 
@@ -58,8 +59,7 @@ def main():
             print("Processing:", source)
             vision.run_object_detection(source, target_folder)
         if settings.app_name=="ai_label":
-            import datasets.create_dataset
-            datasets.create_dataset.Create(os.path.join(target_folder,"annotations"),settings.session_name, settings.labels)
+            generate_dataset(os.path.join(target_folder,"annotations"),settings.session_name, settings.labels)
     
     
 if __name__ == "__main__":
