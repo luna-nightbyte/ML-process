@@ -2,5 +2,9 @@ database/
 output/*
 input/*
 models/*
+datasets/annotations/*
+datasets/train/*
+**/runs/*
+
 
 .env
