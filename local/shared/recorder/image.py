@@ -32,16 +32,16 @@ class Image:
                         if os.path.isdir(file_path):
                             self.load_to_queue(file_path)
                         else:
-                            self.queue.put(cv2.imread(filename=file_path))
+                            self.queue.put((i,cv2.imread(filename=file_path)))
                 else:
-                    self.queue.put(cv2.imread(filename=input_source))
                     i+=1
+                    self.queue.put((i,cv2.imread(filename=input_source)))
             loop_finished = True
     
     def start_recording(self, output_path, frame_shape):
-        return
+        return None
     def stop_recording(self):
-        return
+        return None
 
     def write_frame(self, path,frame):
-        print(cv2.imwrite(path,frame))
+        return cv2.imwrite(path,frame)

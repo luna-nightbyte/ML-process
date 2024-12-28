@@ -6,7 +6,7 @@ import logging as log
 
 from ultralytics import YOLO
 
-import shared.target.recorder as recorder
+import shared.recorder.process as process
 from shared.config import settings
 from shared.file import get_labels
 
@@ -22,7 +22,7 @@ class model:
         self.model = None
         self.useCuda = False
     def init_model(self):
-        self.model = YOLO(settings().model_path)
+        self.model = YOLO(settings.model_path)
         if torch.cuda.is_available():
             print(f"GPU Name: {torch.cuda.get_device_name(0)}\n")
             self.model.to('cuda')  # Move model to GPU
@@ -49,7 +49,7 @@ def convert_bbox_cord(box, new_frame,output_size):
     'output_size' defaults to enviroment setting if None
     """
     if output_size is None:
-        output_size = settings().output_size
+        output_size = settings.output_size
     height, width, _ = new_frame.shape
     
     scale_x = width / output_size[1]
@@ -67,17 +67,17 @@ def convert_bbox_cord(box, new_frame,output_size):
 def get_frame_tensor(frame):
     # Resize the frame to the desired size
     
-    resized_frame = cv2.resize(frame, settings().output_size, interpolation=cv2.INTER_LINEAR)
+    resized_frame = cv2.resize(frame, settings.output_size, interpolation=cv2.INTER_LINEAR)
 
     # Convert frame to tensor and send it to GPU if needed
     frame_tensor = torch.from_numpy(resized_frame).permute(2, 0, 1).unsqueeze(0).float()
     
-    if settings().use_cuda:
+    if settings.use_cuda:
         frame_tensor = frame_tensor.to('cuda')
         
     return frame_tensor
 
-def check_detections(frame: cv2.typing.MatLike, out_path: str):
+def check_detections(frame: cv2.typing.MatLike, out_path: str, frame_num: int):
     detections = []
     # Load the model
     model = Model.load_vision()
@@ -94,46 +94,43 @@ def check_detections(frame: cv2.typing.MatLike, out_path: str):
         boxes = result.boxes.xyxy.cpu().numpy()
         confidences = result.boxes.conf.cpu().numpy()
         labels = result.boxes.cls.cpu().numpy()
-        i = 0
         for box, conf, label in zip(boxes, confidences, labels):
-            if conf > float(settings().threshold):
+            if conf > float(settings.threshold):
                 trigger_label = "unknown"
                 label_index = str(label).split(".")[0]
                 
                 # Get the corresponding label from Config
-                for current_label_index, l in enumerate(settings().labels):
+                for current_label_index, l in enumerate(settings.labels):
                     if str(current_label_index) == label_index:
                         trigger_label = l
                         break
-
                 # Convert the bounding box coordinates to image size
                 x1, y1, x2, y2 = convert_bbox_cord(box, frame, None)
-                out_frame = recorder.save_box_if_set(frame, (x1, y1, x2, y2), out_path, i, recorder.process.csv_writer)
-                    
-    
-                i+=1
-                
+                out_frame,err = process.save_box_if_set(frame, (x1, y1, x2, y2), out_path, frame_num)
+                if err:
+                    print(err)
+                    out_frame = frame
                 detections.append((out_frame, (x1, y1, x2, y2), trigger_label, conf))
 
     return frame, detections
 
-queue_i = 0
-def process_frame_queue(frame_queue: Queue, index_queue: Queue, stop_event: Event, input_source, target_folder: str):
-    global Config, queue_i
+def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, target_folder: str):
     try:
-        if settings().app_name == "ai_label":
-            out_path = os.path.join(target_folder,"annotations/labelImg",settings().SESSION_NAME, os.path.basename(input_source))
+        if settings.app_name == "ai_label":
+            out_path = os.path.join(target_folder,"annotations/labelImg",settings.session_name, os.path.basename(input_source))
         else:
             out_path = os.path.join(target_folder, os.path.basename(input_source))
             
         
     except:
-        out_path =  os.path.join(target_folder, f"noName_{recorder.process.get_video_num()}_.mp4")
+        out_path =  os.path.join(target_folder, f"noName_{process.MainRecorder.get_video_num()}_.mp4")
     
     while not stop_event.is_set() or not frame_queue.empty():
         if not frame_queue.empty():
+            
+            frame_num, frame = frame_queue.get()
             th = None
-            name = settings().app_name
+            name = settings.app_name
             if name == "detection":
                 from apps.post_process import trigger_handle
                 th = trigger_handle
@@ -144,37 +141,57 @@ def process_frame_queue(frame_queue: Queue, index_queue: Queue, stop_event: Even
                 from apps.ai_labeler import trigger_handle
                 th = trigger_handle
             elif name == "frame_insert":
-                frame = frame_queue.get()
-                image = recorder.reconstruct_original_image(input_source, frame,queue_i)
+                image = process.reconstruct_original_image(input_source, frame)
                 out_path = os.path.join(target_folder,os.path.basename(input_source))
-                recorder.process.write_frame(out_path,image)
+                process.MainRecorder.write_frame(out_path,image)
                 print("Saved image as: ",os.path.join(target_folder,os.path.basename(input_source)))
                 queue_i+=1
                 continue
             else:
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
-                
-                
-            frame, detections=check_detections(frame_queue.get(),out_path)
-            
-            th.handle_trigger(
-                frame,
-                detections,
-                out_path
-                )
+            frame, detections=check_detections(frame,out_path, frame_num)
+            try:
+                th.handle_trigger(
+                    frame,
+                    detections,
+                    out_path
+                    )
+            except Exception as e:
+                print(e)
         
-    recorder.process.stop_recording()
+    process.MainRecorder.stop_recording()
+    if settings.extract_detection_img:
+        process.SubRecorder.stop_recording()
 
-def run_object_detection(input_source,target_folder):
-    frame_queue = Queue(maxsize=10)
-    index_queue = Queue(maxsize=10)
-    stop_event = Event() 
-    reader_thread = Thread(target=recorder.process.reader, args=(input_source, frame_queue, index_queue, stop_event))
-    
-    reader_thread.start()
-    
-    if process_frame_queue(frame_queue, index_queue, stop_event, input_source ,target_folder):
-        return
-    reader_thread.join()
+def run_object_detection(input_source, target_folder):
+    # Initialize main frame queue and stop event
+    frame_queues = [(Queue(maxsize=10), Event())]
+    reader_threads = [Thread(target=process.MainRecorder.reader, args=(input_source, frame_queues[0][0], frame_queues[0][1]))]
 
+    # Start the main reader thread
+    reader_threads[0].start()
+
+    if settings.extract_detection_img:
+        # Initialize sub frame queue and stop event, add to lists
+        sub_frame_queue = Queue(maxsize=10)
+        sub_stop_event = Event()
+        frame_queues.append((sub_frame_queue, sub_stop_event))
+        reader_threads.append(Thread(target=process.SubRecorder.reader, args=(input_source, sub_frame_queue, sub_stop_event)))
+
+        # Start the sub-reader thread
+        reader_threads[-1].start()
+
+    try:
+        # Process each frame queue
+        for frame_queue, stop_event in frame_queues:
+            if process_frame_queue(frame_queue, stop_event, input_source, target_folder):
+                return
+    finally:
+        # Signal all stop events to gracefully terminate threads
+        for _, stop_event in frame_queues:
+            stop_event.set()
+
+        # Join all reader threads to ensure proper cleanup
+        for thread in reader_threads:
+            thread.join()

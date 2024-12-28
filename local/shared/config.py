@@ -3,7 +3,7 @@ import csv
 import shared.file as files
 
 
-class settings:
+class Config:
     def __init__(self):
         """Initialize application settings with environment variables and default values."""
         # Paths and environment variables
@@ -17,12 +17,15 @@ class settings:
         # App configurations
         self.app_name = EnvManager.get(EnvManager.APP_NAME)
         self.session_name = EnvManager.get(EnvManager.SESSION_NAME)
+        self.extract_detection_img = EnvManager.get(EnvManager.EXTRACT_BOX, cast_type=str) == "true"
         self.epochs = EnvManager.get(EnvManager.EPOCHS, cast_type=int)
         self.threshold = EnvManager.get(EnvManager.THRESHOLD, cast_type=float)
         self.batch = EnvManager.get(EnvManager.BATCH, cast_type=int)
         self.min_consecutive = EnvManager.get(EnvManager.CONSECUTIVE)
+        self.csv_fieldnames = ["file_path", "x1", "y1", "x2", "y2", "scale_x", "scale_y"]
 
         # Model-related settings
+        self.model_imge_size = EnvManager.get(EnvManager.MODEL_IMG_SIZE, cast_type=int)
         self.model = None
         self.use_cuda = False
 
@@ -95,10 +98,12 @@ class EnvManager:
     INPUT_DIR = "INPUT_DIR"
     EPOCHS = "EPOCHS"
     BATCH = "BATCH"
+    MODEL_IMG_SIZE = "MODEL_IMG_SIZE"
     CONSECUTIVE = "CONSECUTIVE"
     THRESHOLD = "THRESHOLD"
     OUTPUT_SIZE = "OUTPUT_SIZE"
     PADDING = "PADDING"
+    EXTRACT_BOX = "EXTRACT_BOX"
     SHOW_BOUNDING_BOX = "SHOW_BOUNDING_BOX"
     SERVER_USER = "SERVER_USER"
     SERVER_PASS = "SERVER_PASS"
@@ -117,32 +122,31 @@ class EnvManager:
     def set(key, value):
         os.environ[key] = str(value)
 
+settings = Config()
 
-class CSVData:
+class CSV:
     def __init__(self, path):
         """Initialize CSV data handler."""
         self.path = path
         self.file = None
-        self.writer = None
         self.fieldnames = None
-        
+        self.writer = None
 
-    def open(self, is_new_file: bool, fieldnames):
+    def open(self, is_new_file: bool):
         """Open the CSV file for writing."""
         if self.is_open():
             return f"{self.path} already open"
-
         try:
             self.file = open(self.path, mode="a", newline="")
-            self.writer = csv.DictWriter(self.file, fieldnames=fieldnames)
+            self.writer = csv.DictWriter(self.file, fieldnames=settings.csv_fieldnames)
             if is_new_file:
                 self.writer.writeheader()
-            self.fieldnames = fieldnames
+            self.fieldnames = settings.csv_fieldnames
         except Exception as e:
             self.file = None
             print(f"Error opening file {self.path}: {e}")
             return str(e)
-
+        return None
     def close(self):
         """Close the CSV file."""
         if self.file:
@@ -154,6 +158,17 @@ class CSVData:
         """Check if the CSV file is open."""
         return self.writer is not None
 
+    def write(self, data):
+        """Write a row to the CSV file."""
+        if not self.is_open():
+            err = self.open(False, self.fieldnames)
+            if err:
+                return str(err)
+        try:
+            self.writer.writerow(data)
+        except Exception as e:
+            return f"Error writing to file {self.path}: {e}"
+        return None
     def read(self):
         """Read data from the CSV file."""
         output_data = []
@@ -167,15 +182,6 @@ class CSVData:
         except Exception as e:
             print(f"Error reading file {self.path}: {e}")
         return output_data
-
-    def write(self, data):
-        """Write a row to the CSV file."""
-        if not self.is_open():
-            err = self.open(False, self.fieldnames)
-            if err:
-                print(err)
-                return err
-        self.writer.writerow(data)
 
     @staticmethod
     def _is_valid_input(line):
@@ -199,3 +205,5 @@ class CSVData:
             "scale_x": float(parts[5]),
             "scale_y": float(parts[6]),
         }
+        
+csv_handler = CSV(settings.csv_file_path)

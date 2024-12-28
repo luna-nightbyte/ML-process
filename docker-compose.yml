@@ -1,8 +1,8 @@
 x-defaults: &default-settings
   environment:
     # Application Settings
-    - APP_NAME=frame_insert   # [ detection | ai_label | continuous | train | frame_insert ]
-    - SESSION_NAME=detection       # Any name to identify the session
+    - APP_NAME=demo   # [ detection | ai_label | continuous | train | frame_insert ]
+    - SESSION_NAME=demo       # Any name to identify the session
 
     # Model and Threshold
     - MODEL_PATH=./models/yolo/model.pt  # Must be inside the 'models/yolo' folder.
@@ -10,18 +10,19 @@ x-defaults: &default-settings
     - CONSECUTIVE=3                      # Typically 2-5 for stability.
 
     # Input Settings
-    - INPUT_DIR=input/INPUT_FOLDER       # Must be inside the 'input' folder.
+    - INPUT_DIR=input/demo       # Must be inside the 'input' folder.
 
     # Output Settings
     - OUTPUT_SIZE=128,128                # For example: 512,512
-    - PADDING=50                         # Optional. Extra padding for image extraction (not fully implemented yet).
+    - EXTRACT_BOX=true                   # true/false
+    # - PADDING=                         # Optional. Extra padding for image extraction (not fully implemented yet).
     - SHOW_BOUNDING_BOX=false            # Draw bounding boxes on output frames (true/false).
     - CSV_FILE_PATH=output/file.csv      # Path to save the output CSV file.
 
     # Training-Specific Settings
     - EPOCHS=150                         
     - BATCH=4                            # Valid values: 4, 8, 32, 64, etc. Higher values require more GPU VRAM.
-
+    - MODEL_IMG_SIZE=640
     # File Serving Settings
     - SERVER_USER=${FILE_SERVER_USER}    # Username for file server.
     - SERVER_PASS=${FILE_SERVER_PASS}    # Password for file server.

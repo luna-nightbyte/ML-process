@@ -1,7 +1,7 @@
 from queue import Queue
 from threading import Event
 import cv2
-
+panic_counter = int(0)
 class Video:
     def __init__(self, source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
@@ -25,8 +25,8 @@ class Video:
             ret, frame = cap.read()
             if not ret:
                 break
-            self.queue.put(frame)
             i+=1
+            self.queue.put((i,frame))
         cap.release()
         
     def start_recording(self, output_path, frame_shape):
@@ -37,8 +37,6 @@ class Video:
         self.writer = cv2.VideoWriter(self.output_path, fourcc, self.fps, (width, height))
         if not self.writer.isOpened():
             raise Exception(f"Failed to open VideoWriter for {self.output_path}")
-        
-        print(f"Opened VideoWriter for {self.output_path}")
         self.running = True
         self.number_of_videos = (self.number_of_videos or 0) + 1
 
@@ -47,18 +45,23 @@ class Video:
         self.running = False
         if self.writer:
             self.writer.release()
-            print(f"Recording stopped for {self.output_path}")
+            print(f"Recording saved: {self.output_path}")
             self.writer = None
-            
+    
     def write_frame(self, path, frame):
         if self.output_path != path:
-            print(f"Switching recorder to new output path: {path}")
             return self._new_recorder(path, frame)
         if self.writer:
             self.writer.write(frame)
-            print(f"Frame written to {self.output_path}, shape: {frame.shape}")
         else:
-            print("Writer is not initialized")
+            panic_counter = panic_counter + 1
+            if panic_counter > 10:
+                print("Failed to init too many times!")
+                return None
+            print("Writer is not initialized\nstarting recording..")
+            h,w,c = frame.shape
+            self.start_recording(self.output_path,(h,w))
+            self.write_frame(path,frame)
             
     def _new_recorder(self,output_path, frame):
         recorder = self
