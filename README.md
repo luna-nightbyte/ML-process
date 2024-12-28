@@ -6,30 +6,46 @@ Run a docker app on a video and generate dataset for docker training app. Or run
 _Make sure to checkout [Requirements](https://github.com/luna-nightbyte/ML-process/tree/main?tab=readme-ov-file#requirements)_
 ## Usage
 Simply pull the latest docker [image](https://hub.docker.com/r/lunanightbyte/ml-process/tags?name=latest) from the hub and run with the [compose file](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) from this repo.
-#### Training
+### Training
 Remember to modify [dataset.yaml](https://github.com/luna-nightbyte/ML-process/blob/main/local/dataset.yaml) for your dataset/Session name. 
 
-#### General
-Modify docker compose to use your desired application:
+
+### Settings
+The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
+Edit these to change settings when you run any application:
 ```docker-compose.yml
-x-defaults: &default-settings
-  environment:
     # Application settings:
-      # ----APP NAME---- 
-      # [ detection | ai_label | continuous | train | frame_insert ]
-    - APP_NAME=detection
+    - APP_NAME=demo   # [ detection | ai_label | continuous | train | frame_insert ]
+    - SESSION_NAME=demo       # Any name to identify the session
 
+    # Model and Threshold
+    - MODEL_PATH=./models/yolo/model.pt  # Must be inside the 'models/yolo' folder.
+    - THRESHOLD=0.5                      # Min: 0.0, Max: 1.0
+    - CONSECUTIVE=3                      # Typically 2-5 for stability.
 
-services:
-  ML-process:
-    <<: *default-settings
-    container_name: ml-processor
-    volumes:
-      - PATH/TO/INPUT/FOLDER:/usr/src/app/data/input:ro
+    # Input Settings
+    - INPUT_DIR=input/demo       # Must be inside the 'input' folder.
+
+    # Output Settings
+    - OUTPUT_SIZE=128,128                # For example: 512,512
+    - EXTRACT_BOX=true                   # true/false
+    # - PADDING=                         # Optional. Extra padding for image extraction (not fully implemented yet).
+    - SHOW_BOUNDING_BOX=false            # Draw bounding boxes on output frames (true/false).
+    - CSV_FILE_PATH=output/file.csv      # Path to save the output CSV file.
+
+    # Training-Specific Settings
+    - EPOCHS=150                         
+    - BATCH=4                            # Valid values: 4, 8, 32, 64, etc. Higher values require more GPU VRAM.
+    - MODEL_IMG_SIZE=640
+    
+    # File Serving Settings
+    - SERVER_USER=${FILE_SERVER_USER}    # Username for file server.
+    - SERVER_PASS=${FILE_SERVER_PASS}    # Password for file server.
 ```
+
 __Experminental__
 
-Optional during object detection to extract the detected object in a spesific frame size. Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction, and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
+Optional during object detection to extract the detected object in a spesific frame size. ~Add some value to `PADDING=` In the `docker-compose.yml` file to enable extraction~ Set EXTRACT_BOX=true to enable object exctraction and set your desired output size with `OUTPUT_SIZE=`. The output size can be larger and smaller than the detected object. The frame will be resized while keeping the aspect ratio.
 `PADDING=` is intended to be the amount of extra padding around the detected object to extract. But this is not implemented yet. 
 
 This extracted image can then be re-inserted back into the original image using the x.y position saved in a csv file. 
@@ -39,7 +55,11 @@ __Docker alternative__
 user@host:/$ docker pull lunanightbyte/ml-process:latest
 ```
 
-__Example demo run output__
+### Demo
+<details>
+<summary>
+Docker compose</summary>
+
 ```bash
 user@host:/$ git clone https://github.com/luna-nightbyte/ML-process
 user@host:/$ cd ./ML-process
@@ -94,42 +114,86 @@ val: Scanning /usr/src/app/datasets/train/demo/val/labels... 1571 images, 0 back
         2/2      3.73G     0.3184     0.3344     0.8527         15        640:                          100%|██████████| 146/146 [00:34<00:00,  4.19it/s]
                  Class     Images  Instances      Box(P          R      mAP50  mAP50-95):               100%|██████████| 50/50 [00:05<00:00,  9.28it/s]
                  Class     Images  Instances      Box(P          R      mAP50  mAP50-95):               100%|██████████| 50/50 [00:05<00:00,  9.17it/s]
+
 ```
+</details>
+
+<details>
+<summary>
+output files</summary>
+  
+```
+├── datasets
+│   ├── annotations
+│   │   ├── labelImg
+│   │   │   └── demo  [4760 entries exceeds filelimit, not opening dir]
+│   │   └── ultralytics
+│   │       └── demo
+│   │           ├── images  [2380 entries exceeds filelimit, not opening dir]
+│   │           └── labels  [2380 entries exceeds filelimit, not opening dir]
+│   └── train
+│       └── demo
+│           ├── train
+│           │   ├── images  [2327 entries exceeds filelimit, not opening dir]
+│           │   ├── labels  [2327 entries exceeds filelimit, not opening dir]
+│           │   └── labels.cache
+│           └── val
+│               ├── images  [1571 entries exceeds filelimit, not opening dir]
+│               ├── labels  [1571 entries exceeds filelimit, not opening dir]
+│               └── labels.cache
+├── demo
+│   ├── 171044-844787782_tiny.mp4
+│   ├── 202718-918779955_medium.mp4
+│   ├── girl-1867092_1280.jpg
+│   └── man-3803551_1280.jpg
+├── local
+│   ├── demo.pt
+│   ├── runs
+│   │   └── detect
+│   │       └── train
+│   │           ├── args.yaml
+│   │           ├── confusion_matrix_normalized.png
+│   │           ├── confusion_matrix.png
+│   │           ├── F1_curve.png
+│   │           ├── labels_correlogram.jpg
+│   │           ├── labels.jpg
+│   │           ├── P_curve.png
+│   │           ├── PR_curve.png
+│   │           ├── R_curve.png
+│   │           ├── results.csv
+│   │           ├── results.png
+│   │           ├── train_batch0.jpg
+│   │           ├── train_batch1.jpg
+│   │           ├── train_batch2.jpg
+│   │           ├── val_batch0_labels.jpg
+│   │           ├── val_batch0_pred.jpg
+│   │           ├── val_batch1_labels.jpg
+│   │           ├── val_batch1_pred.jpg
+│   │           ├── val_batch2_labels.jpg
+│   │           ├── val_batch2_pred.jpg
+│   │           └── weights
+│   │               ├── best.pt
+│   │               └── last.pt
+├── models
+│   ├── classes.txt
+│   └── yolo
+│       └── model.pt
+├── output
+│   ├── demo
+│   │   ├── 171044-844787782_tiny.mp4
+│   │   ├── 202718-918779955_medium.mp4
+│   │   ├── E_171044-844787782_tiny.mp4
+│   │   ├── E_202718-918779955_medium.mp4
+│   │   ├── E_girl-1867092_1280.jpg
+│   │   ├── E_man-3803551_1280.jpg
+│   │   ├── girl-1867092_1280.jpg
+│   │   └── man-3803551_1280.jpg
+│   └── file.csv
+```
+</details>
+
 
 *Note: This demo is only ment as a very simple bare minimum demo so generate all files the various apps will generate.Annotations, Dataset, Trained model and so on. Always verify any atuo generated annotations using a software like [LabelImg](https://github.com/HumanSignal/labelImg).*
-
-### Settings
-The [docker-compoe.yml](https://github.com/luna-nightbyte/ML-process/blob/main/docker-compose.yml) file contains os enviroments that is used inside all of the containers to run each app. 
-Edit these to change settings when you run any application:
-```docker-compose.yml
-    # Application settings:
-    - APP_NAME=demo   # [ detection | ai_label | continuous | train | frame_insert ]
-    - SESSION_NAME=demo       # Any name to identify the session
-
-    # Model and Threshold
-    - MODEL_PATH=./models/yolo/model.pt  # Must be inside the 'models/yolo' folder.
-    - THRESHOLD=0.5                      # Min: 0.0, Max: 1.0
-    - CONSECUTIVE=3                      # Typically 2-5 for stability.
-
-    # Input Settings
-    - INPUT_DIR=input/demo       # Must be inside the 'input' folder.
-
-    # Output Settings
-    - OUTPUT_SIZE=128,128                # For example: 512,512
-    - EXTRACT_BOX=true                   # true/false
-    # - PADDING=                         # Optional. Extra padding for image extraction (not fully implemented yet).
-    - SHOW_BOUNDING_BOX=false            # Draw bounding boxes on output frames (true/false).
-    - CSV_FILE_PATH=output/file.csv      # Path to save the output CSV file.
-
-    # Training-Specific Settings
-    - EPOCHS=150                         
-    - BATCH=4                            # Valid values: 4, 8, 32, 64, etc. Higher values require more GPU VRAM.
-    - MODEL_IMG_SIZE=640
-    
-    # File Serving Settings
-    - SERVER_USER=${FILE_SERVER_USER}    # Username for file server.
-    - SERVER_PASS=${FILE_SERVER_PASS}    # Password for file server.
-```
 
 ## Requirements
 ### Hardware
