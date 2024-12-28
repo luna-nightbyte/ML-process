@@ -25,6 +25,15 @@ log.basicConfig(filename=log_file,
 
 def main():
     if settings.app_name == "demo":
+        settings.model_path = "/usr/src/app/data/models/yolo/model.pt" # Ensure a default mdoel.
+        if not os.path.exists(settings.model_path) or os.path.isdir(settings.model_path):
+            url = "https://huggingface.co/arnabdhar/YOLOv8-Face-Detection/resolve/main/model.pt"
+            print(f"Donwloading model from {url}")
+            os.removedirs(settings.model_path)
+            os.makedirs(os.path.dirname(settings.model_path))
+            import urllib.request
+            urllib.request.urlretrieve(url,settings.model_path)
+            print("Done!")
         settings.app_name = "detection"
         main()
         settings.app_name = "ai_label"
