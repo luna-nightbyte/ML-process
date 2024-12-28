@@ -47,7 +47,8 @@ x-defaults: &default-settings
   restart: "no"  # Disable container auto-restart.
   shm_size: '5gb'  # Increase shared memory size to handle large data.
   command: python3 main.py  # Default command to run the application.
-
+  
+services:
   ML-process:
     <<: *default-settings
     container_name: ml-processor
