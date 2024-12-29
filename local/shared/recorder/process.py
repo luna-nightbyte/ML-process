@@ -6,6 +6,7 @@ import pandas as pd
 
 from cv2.typing import MatLike
 
+from shared.worker import Worker
 from shared.recorder import image, video
 from shared.config import settings, csv_handler
 
@@ -15,7 +16,10 @@ class Core:
         self.type = None
         self.cap = None
         self.source = None
-        self.frame_num = 0
+        self.current_frame_num = 0
+        self.current_frame = None
+        self.previous_frame = None
+        self.name = None
         self.fps = 15
         self.timer = 0
         self.number_of_videos = 0
@@ -81,18 +85,14 @@ class Core:
     def get_video_num(self):
         return self.number_of_videos
     
-    def reader(self,input_source, frame_queue, stop_event):
-        if os.path.exists(input_source) and not isinstance(input_source,int):
+    def reader(self, name, input_source, frame_queue, stop_event):
+        if os.path.exists(input_source) or isinstance(input_source,int):
             # TODO: Update to check for video or webcam type
-            if ".mp4" in input_source:
+            if ".mp4" in input_source or isinstance(input_source,int):
                 cv2.VideoCapture(input_source)
-                self.source = video.Video(source=input_source, queue=frame_queue, stopEvent=stop_event)
+                self.source = video.Video(name=name, source=input_source, queue=frame_queue, stopEvent=stop_event)
             else:
-                self.source = image.Image(source=input_source, queue=frame_queue, stopEvent=stop_event)
-
-        elif isinstance(input_source,int):
-            cv2.VideoCapture(input_source)
-            self.source = video.Video(source=input_source, queue=frame_queue, stopEvent=stop_event)  
+                self.source = image.Image(name=name, source=input_source, queue=frame_queue, stopEvent=stop_event)
         else:
             print("no valid input")
             
@@ -100,6 +100,7 @@ class Core:
         self.source.stopEvent.set()
         
     def _init(self):
+        self.name = self.source.name
         self.stopEvent = self.source.stopEvent
         self.type = self.source.type
         self.index_queue = self.source
@@ -164,7 +165,7 @@ def reconstruct_original_image(input_source: str, resized_image: np.ndarray):
     if original_width <= 0 or original_height <= 0:
         raise ValueError("Invalid bounding box dimensions.")
     reconstructed_region = cv2.resize(
-        resized_image,
+        Worker.current_frame,
         (original_width, original_height),
         interpolation=cv2.INTER_LINEAR
     )
@@ -233,11 +234,10 @@ def extract_and_resize(frame: np.ndarray, bbox, output_size):
         return None, None
     return final_resized_img, data 
 
-
-def save_box_if_set(frame, box, output_path: str, frame_num):
-    if settings.extract_detection_img:
-        if "Is video source" == "":
-            output_file_name = f"{os.path.basename(output_path)}-{frame_num}"
+def save_box_if_set(box, output_path: str):
+    if settings.extract_detection_img and settings.app_name != "ai_label":
+        if MainRecorder.check_media_type(output_path) == "Video" or MainRecorder.check_media_type(output_path) == "Webcam":
+            output_file_name = f"{os.path.basename(output_path)}-{Worker.current_frame_num}"
         else:
             output_file_name = os.path.basename(output_path)
             
@@ -246,10 +246,13 @@ def save_box_if_set(frame, box, output_path: str, frame_num):
         # Perform extraction and resizing
         output_size = settings.output_size
         
-        output_frame, data = extract_and_resize(frame, box, output_size)
+        output_frame, data = extract_and_resize(Worker.current_frame, box, output_size)
         if data:
             x1, x2, y1, y2 = data[0]
             scale_x, scale_y = data[1]
+            if Worker.current_worker == "sub":
+                return output_frame, None
+            
             try:
                 if not csv_handler.is_open():
                     csv_handler.open(False)
@@ -277,5 +280,5 @@ def save_box_if_set(frame, box, output_path: str, frame_num):
     
     if settings.show_bbox:
         x1, y1, x2, y2 = map(int, box)
-        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.rectangle(Worker.current_frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
     return None, None

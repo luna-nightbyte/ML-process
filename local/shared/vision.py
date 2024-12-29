@@ -9,6 +9,7 @@ from ultralytics import YOLO
 import shared.recorder.process as process
 from shared.config import settings
 from shared.file import get_labels
+from shared.worker import Worker
 
 from queue import Queue
 from threading import Thread, Event
@@ -76,14 +77,14 @@ def get_frame_tensor(frame):
         frame_tensor = frame_tensor.to('cuda')
         
     return frame_tensor
-
-def check_detections(frame: cv2.typing.MatLike, out_path: str, frame_num: int):
+ 
+def check_detections(out_path: str):
     detections = []
     # Load the model
     model = Model.load_vision()
     
     # Prepare the frame tensor
-    frame_tensor = get_frame_tensor(frame)
+    frame_tensor = get_frame_tensor(Worker.current_frame)
     frame_tensor = frame_tensor / 255.0  # Normalize to [0, 1]
     
     # Perform inference
@@ -105,14 +106,15 @@ def check_detections(frame: cv2.typing.MatLike, out_path: str, frame_num: int):
                         trigger_label = l
                         break
                 # Convert the bounding box coordinates to image size
-                x1, y1, x2, y2 = convert_bbox_cord(box, frame, None)
-                out_frame,err = process.save_box_if_set(frame, (x1, y1, x2, y2), out_path, frame_num)
+                x1, y1, x2, y2 = convert_bbox_cord(box, Worker.current_frame, None)
+                out_frame,err = process.save_box_if_set( (x1, y1, x2, y2), out_path)
                 if err:
                     print(err)
-                    out_frame = frame
-                detections.append((out_frame, (x1, y1, x2, y2), trigger_label, conf))
+                    out_frame = Worker.current_frame
+                Worker.update_resized_frame(out_frame)
+                detections.append(( (x1, y1, x2, y2), trigger_label, conf))
 
-    return frame, detections
+    return detections
 
 def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, target_folder: str):
     try:
@@ -127,8 +129,13 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
     
     while not stop_event.is_set() or not frame_queue.empty():
         if not frame_queue.empty():
-            
-            frame_num, frame = frame_queue.get()
+            recorder_name, frame_num, frame = frame_queue.get()
+            if recorder_name == "sub":
+                stop_event.set()
+                print("Skipping")
+                continue
+            Worker.current_worker = recorder_name
+            Worker.update_frame(frame, frame_num)
             th = None
             name = settings.app_name
             if name == "detection":
@@ -141,19 +148,19 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
                 from apps.ai_labeler import trigger_handle
                 th = trigger_handle
             elif name == "frame_insert":
-                image = process.reconstruct_original_image(input_source, frame)
+                image = process.reconstruct_original_image(input_source)
                 out_path = os.path.join(target_folder,os.path.basename(input_source))
                 process.MainRecorder.write_frame(out_path,image)
                 print("Saved image as: ",os.path.join(target_folder,os.path.basename(input_source)))
-                queue_i+=1
                 continue
             else:
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
-            frame, detections=check_detections(frame,out_path, frame_num)
+            
+            detections=check_detections(out_path)
             try:
                 th.handle_trigger(
-                    frame,
+                    Worker.current_frame,
                     detections,
                     out_path
                     )
@@ -165,8 +172,9 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
 def run_object_detection(input_source, target_folder):
     # Initialize main frame queue and stop event
     frame_queues = [(Queue(maxsize=10), Event())]
-    reader_threads = [Thread(target=process.MainRecorder.reader, args=(input_source, frame_queues[0][0], frame_queues[0][1]))]
-
+    
+    reader_threads = [Thread(target=process.MainRecorder.reader, args=("main",input_source, frame_queues[0][0], frame_queues[0][1]))]
+    
     # Start the main reader thread
     reader_threads[0].start()
 
@@ -175,7 +183,7 @@ def run_object_detection(input_source, target_folder):
         sub_frame_queue = Queue(maxsize=10)
         sub_stop_event = Event()
         frame_queues.append((sub_frame_queue, sub_stop_event))
-        reader_threads.append(Thread(target=process.SubRecorder.reader, args=(input_source, sub_frame_queue, sub_stop_event)))
+        reader_threads.append(Thread(target=process.SubRecorder.reader, args=("sub",input_source, sub_frame_queue, sub_stop_event)))
 
         # Start the sub-reader thread
         reader_threads[-1].start()

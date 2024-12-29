@@ -6,6 +6,7 @@ import os
 import shared.recorder.process as process
 
 from shared.config import settings
+from shared.worker import Worker
 
 def handle_trigger(frame, detections, output_path: str):
     
@@ -26,7 +27,7 @@ def handle_trigger(frame, detections, output_path: str):
                 process.SubRecorder.start_recording(out_e_path,settings.output_size)
         elif media_type == "Image":
             print("Saving image to",out_path)
-            for (box_frame, box, label, conf) in detections:
+            for (box, label, conf) in detections:
                 if settings.extract_detection_img:
                     x1, y1, x2, y2 = map(int, box)
                     cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
@@ -34,7 +35,7 @@ def handle_trigger(frame, detections, output_path: str):
                 process.MainRecorder.write_frame(out_path,frame)
                 if settings.extract_detection_img:
                     process.SubRecorder.type = process.SubRecorder.source.type
-                    process.SubRecorder.write_frame(out_e_path, box_frame)
+                    process.SubRecorder.write_frame(out_e_path, Worker.current_resized_frame)
             # cv2.imwrite(out_path, frame)
     if not len(detections) > 0:
         process.MainRecorder.no_detection_frames += 1
@@ -47,13 +48,13 @@ def handle_trigger(frame, detections, output_path: str):
 
     if process.MainRecorder.running:
         obj_index = 0
-        for (box_frame, box, label, conf) in detections:
+        for (box, label, conf) in detections:
             obj_index += 1
             x1, y1, x2, y2 = map(int, box)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.putText(frame, f'{label}:{conf:.2f}', (x1, y1 - obj_index * 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
             if settings.extract_detection_img:
-                process.SubRecorder.write_frame(out_e_path, box_frame)
+                process.SubRecorder.write_frame(out_e_path, Worker.current_resized_frame)
         process.MainRecorder.write_frame(out_path,frame)
         
 

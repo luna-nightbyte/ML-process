@@ -3,11 +3,12 @@ from threading import Event
 import os
 import cv2
 class Image:
-    def __init__(self, source: str, queue: Queue, stopEvent: Event):
+    def __init__(self, name: str,  source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
         self.stopEvent = stopEvent
         self.source = source
         self.type = "image"
+        self.name = name
         self.output_path = None
         self.writer = None
         self.frame_num = 0
@@ -32,10 +33,10 @@ class Image:
                         if os.path.isdir(file_path):
                             self.load_to_queue(file_path)
                         else:
-                            self.queue.put((i,cv2.imread(filename=file_path)))
+                            self.queue.put((self.name, i, cv2.imread(filename=file_path)))
                 else:
                     i+=1
-                    self.queue.put((i,cv2.imread(filename=input_source)))
+                    self.queue.put((self.name, i, cv2.imread(filename=input_source)))
             loop_finished = True
     
     def start_recording(self, output_path, frame_shape):

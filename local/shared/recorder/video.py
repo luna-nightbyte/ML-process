@@ -3,13 +3,14 @@ from threading import Event
 import cv2
 panic_counter = int(0)
 class Video:
-    def __init__(self, source: str, queue: Queue, stopEvent: Event):
+    def __init__(self, name: str, source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
         self.stopEvent = stopEvent
         self.input_source = source
         self.type = "video"
         self.output_path = None
         self.writer = None
+        self.name = name
         self.frame_num = 0
         self.fps = 15
         self.timer = 0
@@ -26,7 +27,7 @@ class Video:
             if not ret:
                 break
             i+=1
-            self.queue.put((i,frame))
+            self.queue.put((self.name, i, frame))
         cap.release()
         
     def start_recording(self, output_path, frame_shape):
