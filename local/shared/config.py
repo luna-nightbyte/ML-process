@@ -144,7 +144,7 @@ class CSV:
     def is_open(self):
         """Check if the CSV file is open."""
         return self.writer is not None
-    def write(self, path, frame_num, detection_num, x1,x2,y1,y2):
+    def write(self, path, frame_num, detection_num, x1,y1,x2,y2):
         err = self._write({
                     Constansts().CSV().ORIGINAL_FILEPATH: path,
                     Constansts().CSV().FRAME_NUBMER: frame_num, 
