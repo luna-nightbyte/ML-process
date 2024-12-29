@@ -18,7 +18,7 @@ class Constansts:
             self.Sub = "Sub"
             self.Main = "Main"
             self.workDir = "/usr/src/app"
-            self.extracted_file_str = "_E_"
+            self.extracted_file_str = "extracted_"
     class CSV:
         def __init__(self):
             self.ORIGINAL_FILEPATH = "original_filepath"

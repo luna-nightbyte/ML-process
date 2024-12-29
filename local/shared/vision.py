@@ -78,7 +78,7 @@ def get_frame_tensor(frame):
         
     return frame_tensor
  
-def check_detections(out_path: str):
+def check_detections(input_source: str, out_path: str):
     detections = []
     # Load the model
     model = Model.load_vision()
@@ -107,7 +107,7 @@ def check_detections(out_path: str):
                         break
                 # Convert the bounding box coordinates to image size
                 x1, y1, x2, y2 = convert_bbox_cord(box, Worker.current_frame, None)
-                out_frame,err = process.save_box_if_set( (x1, y1, x2, y2), out_path)
+                out_frame,err = process.save_box_if_set(input_source, (x1, y1, x2, y2), out_path)
                 if err:
                     print(err)
                     out_frame = Worker.current_frame
@@ -150,6 +150,8 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
             elif name == Constansts().App().FRAME_INSERT:
                 image = process.reconstruct_original_image(input_source)
                 out_path = os.path.join(target_folder,os.path.basename(input_source))
+                h,w,c = image.shape
+                process.MainRecorder.start_recording(out_path,(h,w))
                 process.MainRecorder.write_frame(out_path,image)
                 print("Saved image as: ",os.path.join(target_folder,os.path.basename(input_source)))
                 continue
@@ -157,7 +159,7 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
                 print("Wrong settings in docker.compose.yml... Check app name!")
                 exit()
             
-            detections=check_detections(out_path)
+            detections=check_detections(input_source, out_path)
             try:
                 th.handle_trigger(
                     Worker.current_frame,

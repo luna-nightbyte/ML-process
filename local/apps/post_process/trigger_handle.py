@@ -15,7 +15,7 @@ def handle_trigger(frame, detections, output_path: str):
     # if triggered:
     #     cur.execute(db.set_processed_by_user(o.observation_id, o.video_id, result_trigger))
     out_path = output_path.replace(os.path.basename(output_path),os.path.basename(output_path))
-    out_e_path = output_path.replace(os.path.basename(output_path),f"E_{os.path.basename(output_path)}")
+    out_e_path = output_path.replace(os.path.basename(output_path),f"{Constansts().General().extracted_file_str}{os.path.basename(output_path)}")
     media_type = process.MainRecorder.check_media_type(output_path)
     
     if len(detections) > 0 and not process.MainRecorder.running:

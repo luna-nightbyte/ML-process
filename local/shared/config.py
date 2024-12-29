@@ -173,34 +173,23 @@ class CSV:
             with open(self.path, mode="r") as file:
                 reader = csv.reader(file)
                 for line in reader:
-                    if self._is_valid_input(line):
-                        data = line[0].split(",")
-                        data = self._parse_line(line[0])
-                        output_data.append(data)
+                    data = self._parse_line(line)
+                    output_data.append(data)
         except Exception as e:
             print(f"Error reading file {self.path}: {e}")
         return output_data
 
-    @staticmethod
-    def _is_valid_input(line):
-        """Validate the input line."""
-        try:
-            _ = int(line[0].split(",")[1])  # Test if input can be processed
-            return True
-        except (IndexError, ValueError):
-            return False
 
-    def _parse_line(self, line):
+    def _parse_line(self, parts):
         """Parse a CSV line into a dictionary."""
-        parts = line.split(",")
         return {
             Constansts().CSV().ORIGINAL_FILEPATH: parts[0],
             Constansts().CSV().FRAME_NUBMER: parts[1], 
             Constansts().CSV().DETECTION_NUMBER: parts[2],
-            Constansts().CSV().X1: int(parts[3]),
-            Constansts().CSV().Y1: int(parts[4]),
-            Constansts().CSV().X2: int(parts[5]),
-            Constansts().CSV().Y2: int(parts[6])
+            Constansts().CSV().X1: parts[3],
+            Constansts().CSV().Y1: parts[4],
+            Constansts().CSV().X2: parts[5],
+            Constansts().CSV().Y2: parts[6]
         }
         
 csv_handler = CSV(settings.csv_file_path)
