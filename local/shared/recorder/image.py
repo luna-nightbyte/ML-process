@@ -2,12 +2,13 @@ from queue import Queue
 from threading import Event
 import os
 import cv2
+from shared.constansts import Constansts
 class Image:
     def __init__(self, name: str,  source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
         self.stopEvent = stopEvent
         self.source = source
-        self.type = "image"
+        self.type = Constansts().General().Image
         self.name = name
         self.output_path = None
         self.writer = None
@@ -43,6 +44,5 @@ class Image:
         return None
     def stop_recording(self):
         return None
-
     def write_frame(self, path,frame):
         return cv2.imwrite(path,frame)

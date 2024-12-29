@@ -50,8 +50,6 @@ class Source:
         return self.SERVER_USER
     def get_server_pass(self):
         return self.SERVER_PASS
-    def get_server_url(self):
-        return self.SERVER_URL
     def set_server_user(self,SERVER_USER):
         if SERVER_USER == "user":
             print("WARNING: Fileserving expects default username  'user'")
@@ -64,7 +62,6 @@ class Source:
 
 def create_if_not_exist(folder):
     if not os.path.exists(folder):
-        print("mkdir",folder)
         os.makedirs(folder)
         
 def no_input_files(folder):

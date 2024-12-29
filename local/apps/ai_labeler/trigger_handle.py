@@ -42,8 +42,6 @@ def handle_trigger(frame,detections,output_path: str):
             tmp = output_path.split("/")
             tmp = tmp[len(tmp)-1]
             full_output_path = output_path.replace(tmp, img_name)
-
-            print("Save 2")
             # Save the false positive frame
             annotate.save(img_name, frame, None, 'false_positive', full_output_path)
     

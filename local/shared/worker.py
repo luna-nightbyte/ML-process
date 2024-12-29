@@ -4,8 +4,11 @@ class Core():
     def __init__(self):
         self.current_worker = None
         self.current_frame_num = None
+        self.frame_counter = 0
+        
         self.current_frame = None
         self.previous_frame = None
+        
         self.current_resized_frame = None
         self.previous_resized_frame = None
         

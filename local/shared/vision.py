@@ -8,7 +8,7 @@ from ultralytics import YOLO
 
 import shared.recorder.process as process
 from shared.config import settings
-from shared.file import get_labels
+from shared.constansts import Constansts
 from shared.worker import Worker
 
 from queue import Queue
@@ -117,8 +117,9 @@ def check_detections(out_path: str):
     return detections
 
 def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, target_folder: str):
+    
     try:
-        if settings.app_name == "ai_label":
+        if settings.app_name == Constansts().App().AI_LABEL:
             out_path = os.path.join(target_folder,"annotations/labelImg",settings.session_name, os.path.basename(input_source))
         else:
             out_path = os.path.join(target_folder, os.path.basename(input_source))
@@ -130,24 +131,23 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
     while not stop_event.is_set() or not frame_queue.empty():
         if not frame_queue.empty():
             recorder_name, frame_num, frame = frame_queue.get()
-            if recorder_name == "sub":
-                stop_event.set()
-                print("Skipping")
+            if recorder_name == Constansts().General().Sub:
+                stop_event.set() # Skip looping over same frame twice when running multiple recorders.
                 continue
             Worker.current_worker = recorder_name
             Worker.update_frame(frame, frame_num)
             th = None
             name = settings.app_name
-            if name == "detection":
+            if name == Constansts().App().DETECTIN:
                 from apps.post_process import trigger_handle
                 th = trigger_handle
-            elif name == "continuous":
+            elif name == Constansts().App().CONTINUOUS:
                 from apps.continous import trigger_handle
                 th = trigger_handle
-            elif name == "ai_label":
+            elif name == Constansts().App().AI_LABEL:
                 from apps.ai_labeler import trigger_handle
                 th = trigger_handle
-            elif name == "frame_insert":
+            elif name == Constansts().App().FRAME_INSERT:
                 image = process.reconstruct_original_image(input_source)
                 out_path = os.path.join(target_folder,os.path.basename(input_source))
                 process.MainRecorder.write_frame(out_path,image)
@@ -164,6 +164,7 @@ def process_frame_queue(frame_queue: Queue, stop_event: Event, input_source, tar
                     detections,
                     out_path
                     )
+            
             except Exception as e:
                 print(e)
                 pass
@@ -173,7 +174,7 @@ def run_object_detection(input_source, target_folder):
     # Initialize main frame queue and stop event
     frame_queues = [(Queue(maxsize=10), Event())]
     
-    reader_threads = [Thread(target=process.MainRecorder.reader, args=("main",input_source, frame_queues[0][0], frame_queues[0][1]))]
+    reader_threads = [Thread(target=process.MainRecorder.reader, args=(Constansts().General().Main, input_source, frame_queues[0][0], frame_queues[0][1]))]
     
     # Start the main reader thread
     reader_threads[0].start()
@@ -183,7 +184,7 @@ def run_object_detection(input_source, target_folder):
         sub_frame_queue = Queue(maxsize=10)
         sub_stop_event = Event()
         frame_queues.append((sub_frame_queue, sub_stop_event))
-        reader_threads.append(Thread(target=process.SubRecorder.reader, args=("sub",input_source, sub_frame_queue, sub_stop_event)))
+        reader_threads.append(Thread(target=process.SubRecorder.reader, args=(Constansts().General().Sub, input_source, sub_frame_queue, sub_stop_event)))
 
         # Start the sub-reader thread
         reader_threads[-1].start()

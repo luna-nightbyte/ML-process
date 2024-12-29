@@ -8,7 +8,6 @@ def handle_trigger(frame,detections,output_path: str):
     #    recorder.stop_recording()
     if not recorder.process.running: 
         height, width, _ = frame.shape
-        print(output_path.replace(".mp4",f"_{recorder.process.get_video_num()}.mp4"))
         recorder.process.start_recording(output_path.replace(".mp4",f"_{recorder.process.get_video_num()}.mp4"), (width, height))
 
     if recorder.process.running:

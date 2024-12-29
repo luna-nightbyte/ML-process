@@ -18,11 +18,12 @@ def get_file_lists(server_url,user,password):
     
     out=[""]
     try:
+        from shared.constansts import Constansts
         response = requests.get(f"{server_url}", auth=HTTPBasicAuth(user, password))
         if response.status_code == 200:
             resp = response.text.splitlines()
             for r in resp:
-                if ".mp4" in r or ".jpg" in r or ".png" in r:
+                if r in Constansts().General().image_extensions or r in Constansts().General().video_extensions:
                     if out[0]=="":
                         out[0]= r
                     out.append(r)

@@ -7,6 +7,7 @@ import shared.recorder.process as process
 
 from shared.config import settings
 from shared.worker import Worker
+from shared.constansts import Constansts
 
 def handle_trigger(frame, detections, output_path: str):
     
@@ -20,11 +21,11 @@ def handle_trigger(frame, detections, output_path: str):
     if len(detections) > 0 and not process.MainRecorder.running:
         height, width, _ = frame.shape
         fps = 30  # Set your desired FPS
-        if  media_type == "Video" or media_type == "Webcam":
+        if  media_type == Constansts().General().Video or media_type == Constansts().General().Webcam:
             process.MainRecorder.start_recording(out_path, (width, height))
             if settings.extract_detection_img: 
                 process.SubRecorder.start_recording(out_e_path,settings.output_size)
-        elif media_type == "Image":
+        elif media_type == Constansts().General().Image:
             print("Saving image to",out_path)
             for (box, label, conf) in detections:
                 if settings.extract_detection_img:

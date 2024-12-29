@@ -1,13 +1,14 @@
 from queue import Queue
 from threading import Event
 import cv2
+from shared.constansts import Constansts
 panic_counter = int(0)
 class Video:
     def __init__(self, name: str, source: str, queue: Queue, stopEvent: Event):
         self.queue = queue
         self.stopEvent = stopEvent
         self.input_source = source
-        self.type = "video"
+        self.type = Constansts().General().Video
         self.output_path = None
         self.writer = None
         self.name = name
@@ -71,3 +72,4 @@ class Video:
         recorder.start_recording(output_path,(w,h))
         recorder.write_frame(self.output_path,frame)
         return recorder
+    

@@ -6,6 +6,7 @@ import pandas as pd
 
 from cv2.typing import MatLike
 
+from shared.constansts import Constansts
 from shared.worker import Worker
 from shared.recorder import image, video
 from shared.config import settings, csv_handler
@@ -34,7 +35,7 @@ class Core:
         
         self._init()
         self.running = True
-        if self.type == "video":
+        if self.type == Constansts().General().Video:
             video_path = output_path
             # video_path = output_path.replace(os.path.splitext(output_path)[1],f"_Extracted_{os.path.splitext(output_path)[1]}") 
             self.source.start_recording(video_path,frame_shape)
@@ -86,12 +87,13 @@ class Core:
         return self.number_of_videos
     
     def reader(self, name, input_source, frame_queue, stop_event):
+        
         if os.path.exists(input_source) or isinstance(input_source,int):
-            # TODO: Update to check for video or webcam type
-            if ".mp4" in input_source or isinstance(input_source,int):
+            input_type = self.check_media_type(input_source)
+            if input_type == Constansts().General().Webcam or input_type == Constansts().General().Video:
                 cv2.VideoCapture(input_source)
                 self.source = video.Video(name=name, source=input_source, queue=frame_queue, stopEvent=stop_event)
-            else:
+            elif input_type == Constansts().General().Image:
                 self.source = image.Image(name=name, source=input_source, queue=frame_queue, stopEvent=stop_event)
         else:
             print("no valid input")
@@ -120,40 +122,36 @@ class Core:
 
     def check_media_type(self, filename):
         if isinstance(filename, int):
-            return "Webcam"
-        # Define sets of known image and video extensions
-        image_extensions = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".webp"}
-        video_extensions = {".mp4", ".avi", ".mov", ".mkv", ".flv", ".wmv", ".webm"}
-
+            return Constansts().General().Webcam
+    
         # Extract the file extension
         _, ext = os.path.splitext(filename)
         ext = ext.lower()  # Normalize to lowercase
 
         # Determine the media type
-        if ext in image_extensions:
-            return "Image"
-        elif ext in video_extensions:
-            return "Video"
+        if ext in Constansts().General().image_extensions:
+            return Constansts().General().Image
+        elif ext in Constansts().General().video_extensions:
+            return Constansts().General().Video
         else:
-            return "Unknown"
+            return Constansts().General().Unknown
 
 MainRecorder = Core()
 SubRecorder = Core()
 
 def reconstruct_original_image(input_source: str):
     data = csv_handler.read()
-    input_file_identifier = os.path.basename(input_source).split("_det")[0]
+    input_file_identifier = os.path.basename(input_source).split(Constansts().General().extracted_file_str)[0]
     original_file_path = None
     for line in data:
         if original_file_path is not None:
             break
         for key in line.keys():
-            if key == "file_path":
+            if key == Constansts().CSV().ORIGINAL_FILEPATH:
                 file_path = line.get(key)
                 if input_file_identifier in file_path:
                     original_file_path = line.get(key)
-                    x1, y1, x2, y2 = line.get("x1"), line.get("y1"), line.get("x2"), line.get("y2")
-                    scale_x, scale_y =line.get("scale_x"), line.get("scale_y")
+                    x1, y1, x2, y2 = line.get(Constansts().CSV().X1), line.get(Constansts().CSV().Y1), line.get(Constansts().CSV().X2), line.get(Constansts().CSV().Y2)
                     break
                 
     original_frame = cv2.imread(original_file_path)
@@ -235,8 +233,8 @@ def extract_and_resize(frame: np.ndarray, bbox, output_size):
     return final_resized_img, data 
 
 def save_box_if_set(box, output_path: str):
-    if settings.extract_detection_img and settings.app_name != "ai_label":
-        if MainRecorder.check_media_type(output_path) == "Video" or MainRecorder.check_media_type(output_path) == "Webcam":
+    if settings.extract_detection_img and settings.app_name != Constansts().App().AI_LABEL:
+        if MainRecorder.check_media_type(output_path) == Constansts().General().Video or MainRecorder.check_media_type(output_path) == Constansts().General().Webcam:
             output_file_name = f"{os.path.basename(output_path)}-{Worker.current_frame_num}"
         else:
             output_file_name = os.path.basename(output_path)
@@ -248,9 +246,10 @@ def save_box_if_set(box, output_path: str):
         
         output_frame, data = extract_and_resize(Worker.current_frame, box, output_size)
         if data:
+            Worker.frame_counter+=1
             x1, x2, y1, y2 = data[0]
             scale_x, scale_y = data[1]
-            if Worker.current_worker == "sub":
+            if Worker.current_worker == Constansts().General().Sub:
                 return output_frame, None
             
             try:
@@ -259,15 +258,11 @@ def save_box_if_set(box, output_path: str):
             except Exception as e:
                 return None, e
             try:
-                err = csv_handler.write({
-                    "file_path": output_path_corrected_path.replace("./","/usr/src/app/", 1),
-                    "x1": x1, 
-                    "y1": y1,
-                    "x2": x2, 
-                    "y2": y2, 
-                    "scale_x": scale_x, 
-                    "scale_y": scale_y
-                    }
+                err = csv_handler.write(
+                    output_path_corrected_path.replace("./",Constansts().General().workDir, 1),
+                    Worker.current_frame_num, 
+                    Worker.current_frame_num, 
+                    x1, y1, x2, y2
                 )
                 if err:
                     return None, str(err)

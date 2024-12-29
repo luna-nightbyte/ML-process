@@ -3,43 +3,43 @@ import csv
 import shared.file as files
 
 
+from shared.constansts import Constansts
+
 class Config:
     def __init__(self):
         """Initialize application settings with environment variables and default values."""
         # Paths and environment variables
-        self.model_path = self._resolve_path("data", EnvManager.get(EnvManager.MODEL_PATH))
-        self.csv_file_path = self._resolve_path("/usr/src/app/data", EnvManager.get(EnvManager.CSV_FILE_PATH))
-        self.source_folder = self._get_source_folder(EnvManager.get(EnvManager.INPUT_DIR))
+        self.model_path = self._resolve_path("data", EnvManager.get(Constansts().ENV().MODEL_PATH))
+        self.csv_file_path = self._resolve_path(os.path.join(Constansts().General().workDir,"data"), EnvManager.get(Constansts().ENV().CSV_FILE_PATH))
+        self.source_folder = self._get_source_folder(EnvManager.get(Constansts().ENV().INPUT_DIR))
         self.dataset_target_folder = "./datasets"
-        self.output_target_folder = self._resolve_path("./data/output", EnvManager.get(EnvManager.SESSION_NAME))
+        self.output_target_folder = self._resolve_path("./data/output", EnvManager.get(Constansts().ENV().SESSION_NAME))
         self.dataset_yaml = "./dataset.yaml"
 
         # App configurations
-        self.app_name = EnvManager.get(EnvManager.APP_NAME)
-        self.session_name = EnvManager.get(EnvManager.SESSION_NAME)
-        self.extract_detection_img = EnvManager.get(EnvManager.EXTRACT_BOX, cast_type=str) == "true"
-        self.epochs = EnvManager.get(EnvManager.EPOCHS, cast_type=int)
-        self.threshold = EnvManager.get(EnvManager.THRESHOLD, cast_type=float)
-        self.batch = EnvManager.get(EnvManager.BATCH, cast_type=int)
-        self.min_consecutive = EnvManager.get(EnvManager.CONSECUTIVE)
-        self.csv_fieldnames = ["file_path", "x1", "y1", "x2", "y2", "scale_x", "scale_y"]
-
+        self.app_name = EnvManager.get(Constansts().ENV().APP_NAME)
+        self.session_name = EnvManager.get(Constansts().ENV().SESSION_NAME)
+        self.extract_detection_img = EnvManager.get(Constansts().ENV().EXTRACT_BOX, cast_type=str) == "true"
+        self.epochs = EnvManager.get(Constansts().ENV().EPOCHS, cast_type=int)
+        self.threshold = EnvManager.get(Constansts().ENV().THRESHOLD, cast_type=float)
+        self.batch = EnvManager.get(Constansts().ENV().BATCH, cast_type=int)
+        self.min_consecutive = EnvManager.get(Constansts().ENV().CONSECUTIVE)
         # Model-related settings
-        self.model_imge_size = EnvManager.get(EnvManager.MODEL_IMG_SIZE, cast_type=int)
+        self.model_imge_size = EnvManager.get(Constansts().ENV().MODEL_IMG_SIZE, cast_type=int)
         self.model = None
         self.use_cuda = False
 
         # Output size and padding
         self.output_size, self.padding = self._parse_output_size(
-            EnvManager.get(EnvManager.OUTPUT_SIZE),
-            EnvManager.get(EnvManager.PADDING)
+            EnvManager.get(Constansts().ENV().OUTPUT_SIZE),
+            EnvManager.get(Constansts().ENV().PADDING)
         )
         # Bounding box visibility
-        self.show_bbox = self._parse_boolean(EnvManager.get(EnvManager.SHOW_BOUNDING_BOX))
+        self.show_bbox = self._parse_boolean(EnvManager.get(Constansts().ENV().SHOW_BOUNDING_BOX))
 
         # Server credentials
-        files.Source().set_server_user(EnvManager.get(EnvManager.SERVER_USER))
-        files.Source().set_server_pass(EnvManager.get(EnvManager.SERVER_PASS))
+        files.Source().set_server_user(EnvManager.get(Constansts().ENV().SERVER_USER))
+        files.Source().set_server_pass(EnvManager.get(Constansts().ENV().SERVER_PASS))
 
         # Validations
         self._validate_input_files(self.source_folder)
@@ -90,24 +90,6 @@ class Config:
 
 class EnvManager:
     """A class to handle environment variables."""
-
-    MODEL_PATH: str = "MODEL_PATH"
-    CSV_FILE_PATH = "CSV_FILE_PATH"
-    SESSION_NAME = "SESSION_NAME"
-    APP_NAME = "APP_NAME"
-    INPUT_DIR = "INPUT_DIR"
-    EPOCHS = "EPOCHS"
-    BATCH = "BATCH"
-    MODEL_IMG_SIZE = "MODEL_IMG_SIZE"
-    CONSECUTIVE = "CONSECUTIVE"
-    THRESHOLD = "THRESHOLD"
-    OUTPUT_SIZE = "OUTPUT_SIZE"
-    PADDING = "PADDING"
-    EXTRACT_BOX = "EXTRACT_BOX"
-    SHOW_BOUNDING_BOX = "SHOW_BOUNDING_BOX"
-    SERVER_USER = "SERVER_USER"
-    SERVER_PASS = "SERVER_PASS"
-    
     @staticmethod
     def get(key, default=None, cast_type=str):
         value = os.getenv(key, default)
@@ -123,25 +105,30 @@ class EnvManager:
         os.environ[key] = str(value)
 
 settings = Config()
-
 class CSV:
     def __init__(self, path):
         """Initialize CSV data handler."""
         self.path = path
         self.file = None
-        self.fieldnames = None
         self.writer = None
-
     def open(self, is_new_file: bool):
         """Open the CSV file for writing."""
         if self.is_open():
             return f"{self.path} already open"
         try:
             self.file = open(self.path, mode="a", newline="")
-            self.writer = csv.DictWriter(self.file, fieldnames=settings.csv_fieldnames)
+            fieldnames = [
+                Constansts().CSV().ORIGINAL_FILEPATH,
+                Constansts().CSV().FRAME_NUBMER,
+                Constansts().CSV().DETECTION_NUMBER,
+                Constansts().CSV().X1,
+                Constansts().CSV().Y1,
+                Constansts().CSV().X2,
+                Constansts().CSV().Y2
+            ]
+            self.writer = csv.DictWriter(self.file, fieldnames=fieldnames)
             if is_new_file:
                 self.writer.writeheader()
-            self.fieldnames = settings.csv_fieldnames
         except Exception as e:
             self.file = None
             print(f"Error opening file {self.path}: {e}")
@@ -157,11 +144,21 @@ class CSV:
     def is_open(self):
         """Check if the CSV file is open."""
         return self.writer is not None
-
-    def write(self, data):
+    def write(self, path, frame_num, detection_num, x1,x2,y1,y2):
+        err = self._write({
+                    Constansts().CSV().ORIGINAL_FILEPATH: path,
+                    Constansts().CSV().FRAME_NUBMER: frame_num, 
+                    Constansts().CSV().DETECTION_NUMBER: detection_num, 
+                    Constansts().CSV().X1: x1, 
+                    Constansts().CSV().Y1: y1,
+                    Constansts().CSV().X2: x2, 
+                    Constansts().CSV().Y2: y2
+                    }
+                )
+    def _write(self, data):
         """Write a row to the CSV file."""
         if not self.is_open():
-            err = self.open(False, self.fieldnames)
+            err = self.open(False)
             if err:
                 return str(err)
         try:
@@ -177,6 +174,7 @@ class CSV:
                 reader = csv.reader(file)
                 for line in reader:
                     if self._is_valid_input(line):
+                        data = line[0].split(",")
                         data = self._parse_line(line[0])
                         output_data.append(data)
         except Exception as e:
@@ -192,18 +190,17 @@ class CSV:
         except (IndexError, ValueError):
             return False
 
-    @staticmethod
-    def _parse_line(line):
+    def _parse_line(self, line):
         """Parse a CSV line into a dictionary."""
         parts = line.split(",")
         return {
-            "file_path": parts[0],
-            "x1": int(parts[1]),
-            "y1": int(parts[2]),
-            "x2": int(parts[3]),
-            "y2": int(parts[4]),
-            "scale_x": float(parts[5]),
-            "scale_y": float(parts[6]),
+            Constansts().CSV().ORIGINAL_FILEPATH: parts[0],
+            Constansts().CSV().FRAME_NUBMER: parts[1], 
+            Constansts().CSV().DETECTION_NUMBER: parts[2],
+            Constansts().CSV().X1: int(parts[3]),
+            Constansts().CSV().Y1: int(parts[4]),
+            Constansts().CSV().X2: int(parts[5]),
+            Constansts().CSV().Y2: int(parts[6])
         }
         
 csv_handler = CSV(settings.csv_file_path)
