@@ -12,18 +12,6 @@ from shared.config import settings, csv_handler
 from shared.dataset import generate_dataset
 import shared.recorder.process as process
 
-
-
-
-# This script reads the input folder and copies each video to the output folder.
-
-log_file= 'detection.log'
-# software variables 
-log.getLogger('ultralytics').setLevel(log.WARNING)
-log.basicConfig(filename=log_file, 
-                level=log.INFO,  
-                format='%(asctime)s\n%(message)s')
-
 def main():
     if settings.app_name == "demo":
         settings.model_path = "/usr/src/app/data/models/yolo/model.pt" # Ensure a default mdoel.
