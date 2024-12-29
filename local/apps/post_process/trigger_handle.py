@@ -17,7 +17,6 @@ def handle_trigger(frame, detections, output_path: str):
     out_e_path = output_path.replace(os.path.basename(output_path),f"E_{os.path.basename(output_path)}")
     media_type = process.MainRecorder.check_media_type(output_path)
     
-    bbox_rec = None
     if len(detections) > 0 and not process.MainRecorder.running:
         height, width, _ = frame.shape
         fps = 30  # Set your desired FPS

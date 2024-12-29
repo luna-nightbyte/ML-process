@@ -22,7 +22,7 @@ def handle_trigger(frame,detections,output_path: str):
                 tmp=tmp[len(tmp)-1]
                 full_output_path=output_path.replace(tmp,img_name)
                 # frame = rec.resize_for_tensor(frame, size=(640, 640))
-                for (frame_box, bbox, label, conf) in detections:
+                for (bbox, label, conf) in detections:
                     
                     annotate.save(img_name, frame, bbox, label, full_output_path) 
             else:

@@ -140,7 +140,7 @@ class Core:
 MainRecorder = Core()
 SubRecorder = Core()
 
-def reconstruct_original_image(input_source: str, resized_image: np.ndarray):
+def reconstruct_original_image(input_source: str):
     data = csv_handler.read()
     input_file_identifier = os.path.basename(input_source).split("_det")[0]
     original_file_path = None
