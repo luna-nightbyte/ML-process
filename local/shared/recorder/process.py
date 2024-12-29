@@ -141,27 +141,45 @@ SubRecorder = Core()
 
 def reconstruct_original_image(input_source: str):
     data = csv_handler.read()
-    input_file_identifier = os.path.basename(input_source).split(Constansts().General().extracted_file_str)[0]
+    file_name = os.path.basename(input_source).split(Constansts().General().extracted_file_str)[1]
     original_file_path = None
+    frame_num = None
     for line in data:
         if original_file_path is not None:
             break
         for key in line.keys():
             if key == Constansts().CSV().ORIGINAL_FILEPATH:
                 file_path = line.get(key)
-                if input_file_identifier in file_path:
+                if file_name in file_path:
                     original_file_path = line.get(key)
+                    frame_num, detection_num = line.get(Constansts().CSV().FRAME_NUBMER), line.get(Constansts().CSV().DETECTION_NUMBER)
                     x1, y1, x2, y2 = line.get(Constansts().CSV().X1), line.get(Constansts().CSV().Y1), line.get(Constansts().CSV().X2), line.get(Constansts().CSV().Y2)
                     break
+    
+    file_type = None
+    for ext in Constansts().General().image_extensions: 
+        if ext in original_file_path:
+            file_type = "img"
+    if file_type is None:
+        for ext in Constansts().General().video_extensions: 
+            if ext in original_file_path:
+                file_type = "vid"
                 
-    original_frame = cv2.imread(original_file_path)
+    if file_type == "vid":
+        if frame_num is None:
+            print("Error getting frame number..")
+        original_frame = get_frame(original_file_path,frame_num)
+    elif file_type == "img":
+        original_frame = cv2.imread(original_file_path)
+    else:
+        raise ValueError("Cound not find original frame")   
     frame_width, frame_height = original_frame.shape[0],original_frame.shape[1]
     x1, y1, x2, y2 = map(int, (x1, y1, x2, y2))
     frame_width, frame_height = int(frame_width), int(frame_height)
     original_width = x2 - x1
     original_height = y2 - y1
     if original_width <= 0 or original_height <= 0:
-        raise ValueError("Invalid bounding box dimensions.")
+        raise ValueError("Invalid bounding box dimensions.",x1,x2,y1,y2)
     reconstructed_region = cv2.resize(
         Worker.current_frame,
         (original_width, original_height),
@@ -224,7 +242,7 @@ def extract_and_resize(frame: np.ndarray, bbox, output_size):
         y2 = min(ih, y1 + new_crop_height)
         cropped_img = frame[y1:y2, x1:x2]
     
-    data = [(x1,x2,y1,y2),(scale_x,scale_y)]
+    data = [(x1,x2,y1,y2)]
     try:
         final_resized_img = cv2.resize(cropped_img, output_size, interpolation=cv2.INTER_LINEAR)
     except Exception as e:
@@ -232,12 +250,10 @@ def extract_and_resize(frame: np.ndarray, bbox, output_size):
         return None, None
     return final_resized_img, data 
 
-def save_box_if_set(box, output_path: str):
+def save_box_if_set(input_source: str, box, output_path: str):
     if settings.extract_detection_img and settings.app_name != Constansts().App().AI_LABEL:
-        if MainRecorder.check_media_type(output_path) == Constansts().General().Video or MainRecorder.check_media_type(output_path) == Constansts().General().Webcam:
-            output_file_name = f"{os.path.basename(output_path)}-{Worker.current_frame_num}"
-        else:
-            output_file_name = os.path.basename(output_path)
+       
+        output_file_name = os.path.basename(output_path)
             
         output_path_corrected_path = os.path.join(os.path.dirname(output_path), output_file_name)
         
@@ -248,7 +264,6 @@ def save_box_if_set(box, output_path: str):
         if data:
             Worker.frame_counter+=1
             x1, x2, y1, y2 = data[0]
-            scale_x, scale_y = data[1]
             if Worker.current_worker == Constansts().General().Sub:
                 return output_frame, None
             
@@ -259,7 +274,7 @@ def save_box_if_set(box, output_path: str):
                 return None, e
             try:
                 err = csv_handler.write(
-                    output_path_corrected_path.replace("./",Constansts().General().workDir, 1),
+                    input_source,
                     Worker.current_frame_num, 
                     Worker.current_frame_num, 
                     x1, y1, x2, y2
